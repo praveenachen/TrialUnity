@@ -90,6 +90,8 @@ After starting the app, interactive docs are available at `/docs`.
 
 ## Local Setup
 
+### Run With Python
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -119,6 +121,38 @@ You can also run Uvicorn directly:
 ```powershell
 python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8001
 ```
+
+### Run With Docker
+
+Docker runs the same FastAPI app in one container. The frontend and backend are served together.
+
+```powershell
+Copy-Item .env.example .env
+docker build -t trialunity .
+docker run --env-file .env -p 8001:8001 trialunity
+```
+
+Open:
+
+```text
+http://127.0.0.1:8001
+```
+
+API docs:
+
+```text
+http://127.0.0.1:8001/docs
+```
+
+To enable OpenAI-backed assistant responses in Docker, set these in `.env` before running the container:
+
+```env
+ENABLE_LLM=true
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Do not commit `.env`; it is ignored by Git and Docker.
 
 Run tests:
 
@@ -151,5 +185,5 @@ python -m pytest
 - Cache ClinicalTrials.gov query results for faster repeat searches.
 - Add richer eligibility parsing for age, sex, geography, and biomarkers.
 - Add trial comparison workflows.
-- Add Docker support and CI.
+- Add CI.
 - Add clinician/researcher views for cohort diversity and recruitment planning.
