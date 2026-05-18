@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TrialUnity</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">TU</span>
+        <span>TrialUnity</span>
+      </div>
+      <nav>
+        <a href="#intake">Intake</a>
+        <a href="#results">Matches</a>
+        <a href="/docs">API Docs</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Healthcare AI workflow platform</p>
+          <h1>Explainable clinical trial matching for patient-centered care.</h1>
+          <p>
+            TrialUnity combines ClinicalTrials.gov data normalization, semantic retrieval,
+            eligibility-aware ranking, and grounded AI summaries in one clean workflow.
+          </p>
+        </div>
+        <div class="workflow-panel" aria-label="System workflow">
+          <div>
+            <span>01</span>
+            <strong>Patient profile</strong>
+            <p>Capture condition, location, preferences, and care context.</p>
+          </div>
+          <div>
+            <span>02</span>
+            <strong>Semantic retrieval</strong>
+            <p>Rank trial records by relevance and eligibility signals.</p>
+          </div>
+          <div>
+            <span>03</span>
+            <strong>Explainable output</strong>
+            <p>Show why each trial matched in patient-friendly language.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="intake" class="workspace">
+        <form id="profile-form" class="intake" aria-label="Patient profile intake">
+          <div class="section-heading">
+            <p class="eyebrow">Profile intake</p>
+            <h2>Find relevant trials</h2>
+          </div>
+
+          <label>
+            Condition or diagnosis
+            <input name="condition" value="lung cancer" required />
+          </label>
+
+          <div class="field-row">
+            <label>
+              Age
+              <input name="age" type="number" min="0" max="120" value="54" />
+            </label>
+            <label>
+              Sex
+              <select name="sex">
+                <option value="">Prefer not to say</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>All</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Location
+            <input name="location" value="Toronto" />
+          </label>
+
+          <label>
+            Treatment preferences
+            <input name="interventions" value="immunotherapy" />
+          </label>
+
+          <label>
+            Notes for matching
+            <textarea name="notes" rows="4">Interested in active recruiting studies with clear eligibility requirements.</textarea>
+          </label>
+
+          <button type="submit">Generate matches</button>
+          <p class="form-note">TrialUnity is a navigation aid, not a medical eligibility decision system.</p>
+        </form>
+
+        <section id="results" class="results" aria-live="polite">
+          <div class="section-heading">
+            <p class="eyebrow">Ranked recommendations</p>
+            <h2>Matched trials</h2>
+          </div>
+          <div id="state" class="state">Submit a profile to see explainable recommendations.</div>
+          <div id="cards" class="cards"></div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="trial-dialog">
+      <div class="dialog-head">
+        <div>
+          <p id="dialog-nct" class="eyebrow"></p>
+          <h2 id="dialog-title"></h2>
+        </div>
+        <button id="close-dialog" type="button" aria-label="Close">x</button>
+      </div>
+      <div id="dialog-body"></div>
+    </dialog>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
