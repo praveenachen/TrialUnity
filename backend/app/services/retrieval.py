@@ -13,27 +13,31 @@ class SemanticRetriever:
         query = self._profile_text(patient)
         documents = [self._trial_text(trial) for trial in trials]
         vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english")
-        matrix = vectorizer.fit_transform([query, *documents])
-        similarities = cosine_similarity(matrix[0:1], matrix[1:]).flatten()
+        try:
+            matrix = vectorizer.fit_transform([query, *documents])
+            similarities = cosine_similarity(matrix[0:1], matrix[1:]).flatten()
+        except ValueError as exc:
+            if "empty vocabulary" not in str(exc):
+                raise
+            similarities = [0.0] * len(trials)
         query_terms = tokenize(query)
 
         ranked = []
         for trial, semantic_score in zip(trials, similarities):
             overlap = sorted(query_terms.intersection(tokenize(self._trial_text(trial))))
-            score = self._weighted_score(patient, trial, float(semantic_score), overlap)
+            score = self._weighted_score(patient, trial, float(semantic_score))
             ranked.append((trial, score, overlap[:8]))
 
         return sorted(ranked, key=lambda item: item[1], reverse=True)
 
-    def _weighted_score(self, patient: PatientProfile, trial: Trial, semantic_score: float, overlap: list[str]) -> float:
+    def _weighted_score(self, patient: PatientProfile, trial: Trial, semantic_score: float) -> float:
         condition_match = 0.2 if any(patient.condition.lower() in c.lower() for c in trial.conditions) else 0
         phase_match = 0.08 if patient.phase_preferences and set(patient.phase_preferences).intersection(trial.phases) else 0
         intervention_match = 0.08 if any(
             pref.lower() in " ".join(trial.interventions).lower() for pref in patient.intervention_preferences
         ) else 0
         location_match = 0.07 if patient.location and patient.location.lower() in " ".join(trial.locations).lower() else 0
-        explainability_bonus = min(len(overlap) * 0.015, 0.12)
-        score = (semantic_score * 0.55) + condition_match + phase_match + intervention_match + location_match + explainability_bonus
+        score = (semantic_score * 0.55) + condition_match + phase_match + intervention_match + location_match
         return round(max(0, min(score, 1)), 3)
 
     def _profile_text(self, patient: PatientProfile) -> str:
@@ -41,7 +45,6 @@ class SemanticRetriever:
             part
             for part in [
                 patient.condition,
-                patient.sex or "",
                 patient.location or "",
                 " ".join(patient.intervention_preferences),
                 " ".join(patient.phase_preferences),
@@ -59,7 +62,6 @@ class SemanticRetriever:
                 " ".join(trial.interventions),
                 " ".join(trial.phases),
                 trial.brief_summary or "",
-                trial.eligibility_criteria or "",
                 " ".join(trial.locations),
             ]
             if part

@@ -24,7 +24,7 @@ async def search_trials(request: TrialSearchRequest) -> TrialSearchResponse:
 
 @router.get("/{nct_id}", response_model=TrialDetailResponse)
 async def trial_detail(nct_id: str) -> TrialDetailResponse:
-    trial, _source = await client.get_trial(nct_id)
+    trial, source = await client.get_trial(nct_id)
     if trial is None:
         raise HTTPException(status_code=404, detail="Trial not found")
-    return TrialDetailResponse(trial=trial)
+    return TrialDetailResponse(trial=trial, source=source)

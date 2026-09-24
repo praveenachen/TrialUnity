@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class PatientProfile(BaseModel):
@@ -18,6 +20,17 @@ class TrialSearchRequest(BaseModel):
     phase: str | None = None
     recruitment_status: str | None = "RECRUITING"
     page_size: int = Field(default=10, ge=1, le=50)
+
+    @field_validator("phase")
+    @classmethod
+    def validate_phase(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        phase = value.strip().upper().replace(" ", "").replace("_", "")
+        phase = {"EARLYPHASE1": "EARLY_PHASE1", "NOTAPPLICABLE": "NA"}.get(phase, phase)
+        if phase not in {"EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "NA"}:
+            raise ValueError("phase must be EARLY_PHASE1, PHASE1–PHASE4, or NA")
+        return phase
 
 
 class Trial(BaseModel):
@@ -42,12 +55,28 @@ class MatchExplanation(BaseModel):
     eligibility_notes: list[str] = Field(default_factory=list)
     ranking_rationale: str
     patient_friendly_summary: str
+    relevant_signals: list[str] = Field(default_factory=list)
+    manual_review_signals: list[str] = Field(default_factory=list)
+
+
+EligibilityState = Literal["compatible", "incompatible", "unknown"]
+
+
+class EligibilityCriterion(BaseModel):
+    state: EligibilityState
+    reason: str
+
+
+class StructuredEligibility(BaseModel):
+    status: EligibilityState
+    criteria: dict[str, EligibilityCriterion]
 
 
 class TrialRecommendation(BaseModel):
     trial: Trial
-    score: float = Field(ge=0, le=1)
+    score: float = Field(ge=0, le=1, description="Relative relevance score, not medical eligibility or probability.")
     explanation: MatchExplanation
+    structured_eligibility: StructuredEligibility | None = None
 
 
 class TrialSearchResponse(BaseModel):
@@ -60,6 +89,7 @@ class TrialSearchResponse(BaseModel):
 class TrialDetailResponse(BaseModel):
     trial: Trial
     explanation: MatchExplanation | None = None
+    source: str | None = None
 
 
 class AssistantRequest(BaseModel):
