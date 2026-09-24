@@ -22,15 +22,21 @@ class TrialAssistant:
             logger.info("assistant_provider=fallback reason=missing_llm_config")
             return AssistantResponse(answer=self._fallback_answer(request), provider="fallback", sources=sources)
 
-        client = AsyncOpenAI(api_key=api_key)
-        prompt = self._grounded_prompt(request)
-        response = await client.responses.create(
-            model=settings.openai_model,
-            input=prompt,
-            temperature=0.2,
-        )
-        logger.info("assistant_provider=openai model=%s trial=%s", settings.openai_model, request.trial.nct_id)
-        return AssistantResponse(answer=response.output_text, provider="openai", sources=sources)
+        try:
+            async with AsyncOpenAI(api_key=api_key, timeout=15.0, max_retries=0) as client:
+                response = await client.responses.create(
+                    model=settings.openai_model,
+                    input=self._grounded_prompt(request),
+                    temperature=0.2,
+                )
+                answer = response.output_text
+                if not isinstance(answer, str) or not answer.strip():
+                    raise ValueError("Empty assistant response")
+            logger.info("assistant_provider=openai model=%s trial=%s", settings.openai_model, request.trial.nct_id)
+            return AssistantResponse(answer=answer, provider="openai", sources=sources)
+        except Exception as exc:
+            logger.warning("assistant_provider=fallback reason=provider_failure error=%s", type(exc).__name__)
+            return AssistantResponse(answer=self._fallback_answer(request), provider="fallback", sources=sources)
 
     def _fallback_answer(self, request: AssistantRequest) -> str:
         trial = request.trial
@@ -81,6 +87,9 @@ Conditions: {', '.join(trial.conditions)}
 Interventions: {', '.join(trial.interventions)}
 Phases: {', '.join(trial.phases)}
 Summary: {trial.brief_summary}
+Sex: {trial.sex}
+Minimum age: {trial.minimum_age}
+Maximum age: {trial.maximum_age}
 Eligibility: {trial.eligibility_criteria}
 Locations: {', '.join(trial.locations)}
 """.strip()

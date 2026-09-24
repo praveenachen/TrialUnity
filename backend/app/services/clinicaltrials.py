@@ -1,3 +1,5 @@
+import logging
+
 from pathlib import Path
 from typing import Any
 
@@ -7,6 +9,8 @@ from backend.app.core.config import get_settings
 from backend.app.models.schemas import Trial, TrialSearchRequest
 from backend.app.services.text import normalize_space
 
+
+logger = logging.getLogger(__name__)
 
 SAMPLE_DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "sample_trials.json"
 
@@ -25,6 +29,8 @@ class ClinicalTrialsClient:
             params["query.cond"] = request.condition
         if request.location:
             params["query.locn"] = request.location
+        if request.phase:
+            params["filter.advanced"] = f"AREA[Phase]{request.phase}"
         if request.recruitment_status:
             params["filter.overallStatus"] = request.recruitment_status
 
@@ -36,8 +42,15 @@ class ClinicalTrialsClient:
             studies = payload.get("studies", [])
             trials = [self._normalize_study(study) for study in studies]
             return trials, "clinicaltrials.gov"
-        except (httpx.HTTPError, ValueError):
-            return self.sample_trials(), "sample-data"
+        except (httpx.HTTPError, ValueError, TypeError, AttributeError) as exc:
+            logger.warning("ClinicalTrials.gov search failed (%s); using sample-data", type(exc).__name__)
+            trials = self.sample_trials()
+            if request.phase:
+                trials = [trial for trial in trials if request.phase in trial.phases]
+            if request.recruitment_status:
+                statuses = {status.strip().upper() for status in request.recruitment_status.split(",")}
+                trials = [trial for trial in trials if trial.status.upper() in statuses]
+            return trials[:request.page_size], "sample-data"
 
     async def get_trial(self, nct_id: str) -> tuple[Trial | None, str]:
         try:
@@ -45,7 +58,8 @@ class ClinicalTrialsClient:
                 response = await client.get(f"{self.settings.ctgov_base_url}/studies/{nct_id}", params={"format": "json"})
                 response.raise_for_status()
             return self._normalize_study(response.json()), "clinicaltrials.gov"
-        except (httpx.HTTPError, ValueError):
+        except (httpx.HTTPError, ValueError, TypeError, AttributeError) as exc:
+            logger.warning("ClinicalTrials.gov detail failed (%s); using sample-data", type(exc).__name__)
             for trial in self.sample_trials():
                 if trial.nct_id.lower() == nct_id.lower():
                     return trial, "sample-data"

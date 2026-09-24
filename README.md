@@ -43,9 +43,11 @@ tests/                Focused backend tests
 The current retrieval pipeline uses a lightweight TF-IDF semantic baseline with cosine similarity. This keeps the project easy to run locally while still demonstrating the same system design used by embedding-based retrieval systems:
 
 - patient profile text is converted into a retrieval query
-- trial titles, conditions, interventions, summaries, eligibility criteria, and locations become searchable documents
+- trial titles, conditions, interventions, summaries, phases, and locations become searchable documents
 - semantic relevance is combined with weighted structured signals
-- condition, intervention, phase, location, and matched-term overlap contribute to the final score
+- condition, intervention, phase, and location contribute to the relevance score; matched terms are explanatory only
+- structured age, sex, and recruitment checks are returned separately; incompatible results rank after other results, and missing or unsupported data remains unknown
+- structured compatibility is not full medical eligibility; free-text criteria always require review
 - every recommendation returns a clear explanation rather than only a numeric rank
 
 This design can be upgraded to sentence-transformer embeddings or a vector database without changing the API contract.
@@ -93,6 +95,7 @@ After starting the app, interactive docs are available at `/docs`.
 ### Run With Python
 
 ```powershell
+# Requires Python 3.10 or newer
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
@@ -183,7 +186,7 @@ python -m pytest
 
 - Add sentence-transformer embeddings and a small vector index.
 - Cache ClinicalTrials.gov query results for faster repeat searches.
-- Add richer eligibility parsing for age, sex, geography, and biomarkers.
+- Explore additional validated structured eligibility checks.
 - Add trial comparison workflows.
 - Add CI.
 - Add clinician/researcher views for cohort diversity and recruitment planning.

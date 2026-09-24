@@ -51,3 +51,20 @@ def test_recommendations_include_eligibility_notes() -> None:
 
     assert result.explanation.eligibility_notes
     assert result.explanation.patient_friendly_summary
+
+
+def test_overlap_has_no_additional_score_bonus() -> None:
+    from backend.app.services.retrieval import SemanticRetriever
+    profile = PatientProfile(condition="cancer")
+    trial = Trial(nct_id="1", title="Cancer", conditions=["Cancer"])
+    assert SemanticRetriever()._weighted_score(profile, trial, 0.5) == 0.475
+
+
+def test_structured_fields_and_eligibility_text_do_not_change_relevance() -> None:
+    service = RecommendationService()
+    trial = Trial(nct_id="1", title="Cancer", conditions=["Cancer"])
+    changed = trial.model_copy(update={"sex": "FEMALE", "minimum_age": "90 Years",
+                                      "eligibility_criteria": "Cancer cancer cancer"})
+    first = service.recommend(PatientProfile(condition="cancer", sex="female", age=40), [trial])[0]
+    second = service.recommend(PatientProfile(condition="cancer", sex="male", age=50), [changed])[0]
+    assert first.score == second.score
