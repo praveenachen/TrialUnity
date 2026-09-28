@@ -29,10 +29,12 @@ backend/app/
   models/schemas.py   Pydantic request/response models
   services/
     clinicaltrials.py ClinicalTrials.gov API v2 client and normalization
-    retrieval.py      Semantic retrieval and weighted scoring
+    retrieval/         Hybrid lexical (BM25) + dense (embedding) relevance ranking
+    eligibility.py     Deterministic structured eligibility checks (age/sex/recruitment)
+    equity/            Deterministic ESR (equity/access representation) scoring
     recommendations.py Explainable recommendation generation
-    llm.py            Grounded optional LLM assistant
-    text.py           Text cleanup and token utilities
+    llm.py             Grounded optional LLM assistant
+    text.py            Text cleanup and token utilities
   data/sample_trials.json Local fallback records for offline development
 
 tests/                Focused backend tests
@@ -52,6 +54,33 @@ The retrieval pipeline is a hybrid of lexical and dense semantic search, combine
 - structured compatibility is not full medical eligibility; free-text criteria always require review
 
 This design can be upgraded to a vector database without changing the API contract if the trial catalog outgrows in-memory ranking.
+
+## Equity / Access Representation (ESR)
+
+Every recommendation also returns an **ESR** score: a deterministic, auditable measure of
+representation and access evidence, entirely separate from the relevance score above and
+from structured eligibility. ESR never affects ranking or eligibility, and nothing about
+it uses machine learning — every number is a plain, inspectable formula over evidence that
+is actually present, or `null` when it isn't.
+
+ESR combines three weighted components:
+
+| Component | Weight | What it measures |
+| --- | --- | --- |
+| Socioeconomic Access | 0.35 | Site count, geographic spread, decentralized/remote participation, and patient-to-site proximity — structural access signals only, never income, transportation, or ability to pay |
+| Sex Representation | 0.25 | Protocol sex eligibility (**prospective**) for recruiting trials, or reported enrollment balance vs. a baseline (**observed**) when the registry has published results |
+| Race/Ethnicity Representation | 0.40 | Reported enrollment distribution vs. an explicitly supplied benchmark, compared with Jensen-Shannon similarity — never generated without both a real observed distribution and a real benchmark |
+
+Key rules, enforced in code, not just by convention:
+
+- **Missing evidence is never 0 or 100.** A component with insufficient evidence returns `score: null`, an `evidence_type` explaining why (e.g. `insufficient_data`, `insufficient_benchmark`), and the specific `missing_evidence`.
+- **The overall score only uses available components**, with weights renormalized over what's available (e.g. race missing → the score is the weighted average of socioeconomic and sex alone).
+- **`evidence_coverage` reports completeness separately from the score**, using the *full* weights (a missing high-weight component visibly lowers coverage rather than being hidden by renormalization).
+- **`mode`** is `observed` (real reported data), `prospective` (protocol-only, no enrollment results yet), `mixed` (some of each), or `insufficient_data`.
+- **Protocol sex inclusivity is explicitly labeled as not observed representation.** A trial open to "ALL" sexes is not the same claim as "enrollment turned out balanced."
+- **Race is never inferred from geography, names, or any other proxy.** Without both a reported enrollment distribution and a real, sourced benchmark, the component returns `insufficient_data`/`insufficient_benchmark` rather than a number.
+
+ESR lives in `backend/app/services/equity/` (`schemas.py`, `service.py`, `socioeconomic.py`, `sex.py`, `race.py`, `coverage.py`) and is exposed as `esr` on each `TrialRecommendation`. A future ranking layer may use ESR as a secondary objective; this phase only establishes the scoring/data contract.
 
 ## ClinicalTrials.gov Integration
 
@@ -183,6 +212,9 @@ python -m pytest
 - The frontend is static HTML/CSS/JS served by FastAPI to avoid unnecessary build tooling.
 - The old Streamlit prototype entrypoint is retained only as a migration note.
 - Recommendation scores are transparent weighted signals, not opaque medical eligibility decisions.
+- ESR is deterministic and formula-based on purpose, not ML-scored: representation/access claims need to be auditable, and "why did this trial get this equity score" must always be answerable from a rationale string and a named source, not a model weight.
+- ESR's Socioeconomic Access component scores site/geographic structure only, because that's the only access-relevant data TrialUnity's sources actually contain; it does not claim to model a patient's real socioeconomic status.
+- ESR's Race/Ethnicity component refuses to score without both a real reported enrollment distribution and an explicitly supplied, sourced benchmark, rather than fabricating or hardcoding a population reference.
 
 ## Future Improvements
 
@@ -192,3 +224,4 @@ python -m pytest
 - Add trial comparison workflows.
 - Add CI.
 - Add clinician/researcher views for cohort diversity and recruitment planning.
+- **ESR data gaps (Phase 5):** ingest ClinicalTrials.gov's `resultsSection.baselineCharacteristicsModule` to populate `Trial.enrollment_sex_distribution` / `enrollment_race_distribution` so observed (not just prospective) ESR scoring actually triggers in production; source and wire a real, disclosed race/ethnicity reference benchmark (e.g. a disease-prevalence or census dataset) via `RaceBenchmark`; and consider an external area-deprivation or travel-time dataset to extend Socioeconomic Access beyond site/geography signals.

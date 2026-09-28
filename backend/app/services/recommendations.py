@@ -2,6 +2,7 @@ from backend.app.models.schemas import (
     MatchExplanation, PatientProfile, RelevanceScores, Trial, TrialRecommendation,
 )
 from backend.app.services.eligibility import evaluate_eligibility
+from backend.app.services.equity.service import compute_esr
 from backend.app.services.retrieval import WEIGHTS, HybridRetriever
 from backend.app.services.text import first_sentence
 
@@ -41,6 +42,7 @@ class RecommendationService:
                 ),
                 explanation=explanation,
                 structured_eligibility=eligibility,
+                esr=compute_esr(patient, trial),
             ))
         # Keep relevance unchanged; known structured conflicts form a separate final group.
         results.sort(key=lambda result: result.structured_eligibility.status == "incompatible")

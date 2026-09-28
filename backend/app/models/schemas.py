@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from backend.app.services.equity.schemas import ESRResult
+
 
 class PatientProfile(BaseModel):
     age: int | None = Field(default=None, ge=0, le=120)
@@ -48,6 +50,12 @@ class Trial(BaseModel):
     locations: list[str] = Field(default_factory=list)
     sponsor: str | None = None
     source_url: str | None = None
+    # Reported participant enrollment counts (e.g. {"MALE": 40, "FEMALE": 60}), keyed by
+    # category. Only present when a registry has published actual results (ClinicalTrials.gov
+    # resultsSection.baselineCharacteristicsModule); ingestion does not populate these yet, so
+    # they default to None and equity scoring falls back to prospective/insufficient-data modes.
+    enrollment_sex_distribution: dict[str, int] | None = None
+    enrollment_race_distribution: dict[str, int] | None = None
 
 
 class MatchExplanation(BaseModel):
@@ -100,6 +108,11 @@ class TrialRecommendation(BaseModel):
     relevance: RelevanceScores
     explanation: MatchExplanation
     structured_eligibility: StructuredEligibility | None = None
+    esr: ESRResult | None = Field(
+        default=None,
+        description="Equity/Access Representation score. Independent of `score` and "
+        "`structured_eligibility`; never influences ranking or eligibility.",
+    )
 
 
 class TrialSearchResponse(BaseModel):
