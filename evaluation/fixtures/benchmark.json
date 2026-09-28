@@ -1,0 +1,197 @@
+{
+  "cases": [
+    {
+      "id": "exact-condition-breast-cancer",
+      "category": "exact_condition",
+      "description": "Exact condition-name match with clear lexical overlap.",
+      "patient": {"condition": "metastatic breast cancer"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0001", "title": "Phase 2 Study of Trastuzumab Deruxtecan in Metastatic Breast Cancer", "status": "RECRUITING", "conditions": ["Metastatic Breast Cancer"], "interventions": ["Trastuzumab Deruxtecan"], "phases": ["PHASE2"], "brief_summary": "A study evaluating trastuzumab deruxtecan in patients with HER2-positive metastatic breast cancer.", "locations": ["Boston, Massachusetts, United States"], "sex": "FEMALE"}},
+        {"relevance": 2, "trial": {"nct_id": "SYN-0004", "title": "Metastatic Breast Cancer Immunotherapy Combination Trial", "status": "RECRUITING", "conditions": ["Metastatic Breast Cancer"], "interventions": ["Pembrolizumab"], "phases": ["PHASE2"], "brief_summary": "A study of pembrolizumab combination therapy for metastatic breast cancer.", "locations": ["New York, New York, United States"], "sex": "FEMALE"}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0002", "title": "Early-Stage Breast Cancer Surgical Outcomes Registry", "status": "RECRUITING", "conditions": ["Early-Stage Breast Cancer"], "brief_summary": "A registry study tracking surgical outcomes in early-stage breast cancer.", "locations": ["Chicago, Illinois, United States"], "sex": "FEMALE"}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0003", "title": "Type 2 Diabetes Lifestyle Intervention", "status": "RECRUITING", "conditions": ["Type 2 Diabetes"], "brief_summary": "A lifestyle coaching study for adults with type 2 diabetes.", "locations": ["Remote"]}}
+      ]
+    },
+    {
+      "id": "paraphrase-nsclc-acronym",
+      "category": "related_terminology_low_lexical_overlap",
+      "description": "Query spells out the condition; one relevant trial only uses the acronym.",
+      "patient": {"condition": "non-small cell lung cancer", "notes": "advanced stage inoperable disease"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0010", "title": "NSCLC Targeted Therapy Trial", "status": "RECRUITING", "conditions": ["NSCLC"], "interventions": ["Osimertinib"], "brief_summary": "Study of targeted therapy in NSCLC patients with EGFR mutations.", "locations": ["Seattle, Washington, United States"]}},
+        {"relevance": 2, "trial": {"nct_id": "SYN-0011", "title": "Non-Small Cell Lung Cancer Chemotherapy Study", "status": "RECRUITING", "conditions": ["Non-Small Cell Lung Cancer"], "interventions": ["Carboplatin", "Pemetrexed"], "brief_summary": "A chemotherapy study for advanced non-small cell lung cancer.", "locations": ["Denver, Colorado, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0012", "title": "Small Cell Lung Cancer Trial", "status": "RECRUITING", "conditions": ["Small Cell Lung Cancer"], "brief_summary": "A trial for small cell lung cancer, a biologically distinct disease.", "locations": ["Miami, Florida, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0013", "title": "Pancreatic Cancer Chemotherapy Study", "status": "RECRUITING", "conditions": ["Pancreatic Cancer"], "brief_summary": "A chemotherapy study for pancreatic cancer.", "locations": ["Houston, Texas, United States"]}}
+      ]
+    },
+    {
+      "id": "paraphrase-heart-attack",
+      "category": "related_terminology_low_lexical_overlap",
+      "description": "Lay term 'heart attack' vs. clinical terminology in trial text.",
+      "patient": {"condition": "heart attack", "notes": "recent cardiac event"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0020", "title": "Myocardial Infarction Recovery Program", "status": "RECRUITING", "conditions": ["Myocardial Infarction"], "brief_summary": "A cardiac rehabilitation study for patients recovering from myocardial infarction.", "locations": ["Cleveland, Ohio, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0021", "title": "Acute Coronary Syndrome Intervention Trial", "status": "RECRUITING", "conditions": ["Acute Coronary Syndrome"], "brief_summary": "A trial of an early intervention protocol for acute coronary syndrome.", "locations": ["Dallas, Texas, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0022", "title": "Heart Failure Monitoring Study", "status": "RECRUITING", "conditions": ["Heart Failure"], "brief_summary": "A remote monitoring study for patients with chronic heart failure.", "locations": ["Remote"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0023", "title": "Seasonal Allergy Nasal Spray Study", "status": "RECRUITING", "conditions": ["Allergic Rhinitis"], "brief_summary": "A study of a nasal spray for seasonal allergies.", "locations": ["Atlanta, Georgia, United States"]}}
+      ]
+    },
+    {
+      "id": "intervention-preference-immunotherapy",
+      "category": "treatment_preference",
+      "description": "Same condition; ranking should favor the patient's preferred intervention class.",
+      "patient": {"condition": "lung cancer", "intervention_preferences": ["immunotherapy"]},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0030", "title": "Lung Cancer Immunotherapy Combination Trial", "status": "RECRUITING", "conditions": ["Lung Cancer"], "interventions": ["Immunotherapy", "Nivolumab"], "brief_summary": "A study of combination immunotherapy for lung cancer.", "locations": ["Boston, Massachusetts, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0031", "title": "Lung Cancer Chemotherapy Trial", "status": "RECRUITING", "conditions": ["Lung Cancer"], "interventions": ["Chemotherapy"], "brief_summary": "A standard chemotherapy study for lung cancer.", "locations": ["Boston, Massachusetts, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0032", "title": "Lung Cancer Radiation Therapy Study", "status": "RECRUITING", "conditions": ["Lung Cancer"], "interventions": ["Radiation Therapy"], "brief_summary": "A study of stereotactic radiation therapy for lung cancer.", "locations": ["Boston, Massachusetts, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0033", "title": "Diabetes Insulin Therapy Study", "status": "RECRUITING", "conditions": ["Type 2 Diabetes"], "interventions": ["Insulin"], "brief_summary": "A study of an insulin regimen for type 2 diabetes.", "locations": ["Boston, Massachusetts, United States"]}}
+      ]
+    },
+    {
+      "id": "location-preference-toronto",
+      "category": "location_preference",
+      "description": "Same condition; ranking should favor sites near the patient's stated location.",
+      "patient": {"condition": "lung cancer", "location": "Toronto"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0040", "title": "Lung Cancer Study - Toronto Site", "status": "RECRUITING", "conditions": ["Lung Cancer"], "brief_summary": "A lung cancer trial enrolling at a Toronto site.", "locations": ["Toronto, Ontario, Canada"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0041", "title": "Lung Cancer Study - Vancouver Site", "status": "RECRUITING", "conditions": ["Lung Cancer"], "brief_summary": "A lung cancer trial enrolling at a Vancouver site.", "locations": ["Vancouver, British Columbia, Canada"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0042", "title": "Lung Cancer Study - Multiple US Sites", "status": "RECRUITING", "conditions": ["Lung Cancer"], "brief_summary": "A lung cancer trial enrolling at multiple United States sites.", "locations": ["Boston, Massachusetts, United States", "Chicago, Illinois, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0043", "title": "Breast Cancer Study - Toronto Site", "status": "RECRUITING", "conditions": ["Breast Cancer"], "brief_summary": "A breast cancer trial enrolling at a Toronto site.", "locations": ["Toronto, Ontario, Canada"], "sex": "FEMALE"}}
+      ]
+    },
+    {
+      "id": "phase-preference-phase3",
+      "category": "phase_preference",
+      "description": "Same condition; ranking should favor the patient's preferred trial phase.",
+      "patient": {"condition": "melanoma", "phase_preferences": ["PHASE3"]},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0050", "title": "Phase 3 Melanoma Immunotherapy Trial", "status": "RECRUITING", "conditions": ["Melanoma"], "phases": ["PHASE3"], "brief_summary": "A phase 3 immunotherapy trial for advanced melanoma.", "locations": ["Phoenix, Arizona, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0051", "title": "Phase 1 Melanoma Dose-Escalation Study", "status": "RECRUITING", "conditions": ["Melanoma"], "phases": ["PHASE1"], "brief_summary": "A phase 1 dose-escalation study for melanoma.", "locations": ["Phoenix, Arizona, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0052", "title": "Phase 2 Melanoma Combination Trial", "status": "RECRUITING", "conditions": ["Melanoma"], "phases": ["PHASE2"], "brief_summary": "A phase 2 combination therapy trial for melanoma.", "locations": ["Phoenix, Arizona, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0053", "title": "Phase 3 Psoriasis Biologic Trial", "status": "RECRUITING", "conditions": ["Psoriasis"], "phases": ["PHASE3"], "brief_summary": "A phase 3 biologic trial for plaque psoriasis.", "locations": ["Phoenix, Arizona, United States"]}}
+      ]
+    },
+    {
+      "id": "eligibility-age-restricted",
+      "category": "eligibility_incompatibility",
+      "description": "The most textually relevant trial is structurally eligibility-incompatible for this patient; IR metrics must not be affected by that.",
+      "patient": {"condition": "prostate cancer", "age": 45, "sex": "male"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0060", "title": "Prostate Cancer Hormone Therapy Trial", "status": "RECRUITING", "conditions": ["Prostate Cancer"], "interventions": ["Hormone Therapy"], "brief_summary": "A hormone therapy trial for prostate cancer.", "locations": ["Baltimore, Maryland, United States"], "sex": "MALE", "minimum_age": "65 Years"}},
+        {"relevance": 2, "trial": {"nct_id": "SYN-0061", "title": "Prostate Cancer Active Surveillance Study", "status": "RECRUITING", "conditions": ["Prostate Cancer"], "brief_summary": "An active surveillance study for low-risk prostate cancer.", "locations": ["Baltimore, Maryland, United States"], "sex": "MALE", "minimum_age": "18 Years"}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0062", "title": "Prostate Cancer Screening Registry", "status": "RECRUITING", "conditions": ["Prostate Cancer"], "brief_summary": "A screening registry study for prostate cancer risk factors.", "locations": ["Baltimore, Maryland, United States"], "sex": "MALE", "minimum_age": "18 Years"}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0063", "title": "Breast Cancer Hormone Therapy Trial", "status": "RECRUITING", "conditions": ["Breast Cancer"], "brief_summary": "A hormone therapy trial for breast cancer.", "locations": ["Baltimore, Maryland, United States"], "sex": "FEMALE"}}
+      ]
+    },
+    {
+      "id": "distractor-heavy-diabetes",
+      "category": "distractor",
+      "description": "Several plausible-looking but irrelevant metabolic-disease distractors.",
+      "patient": {"condition": "type 2 diabetes"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0070", "title": "Type 2 Diabetes Metformin Extension Study", "status": "RECRUITING", "conditions": ["Type 2 Diabetes"], "interventions": ["Metformin"], "brief_summary": "An extension study of metformin for type 2 diabetes.", "locations": ["Minneapolis, Minnesota, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0071", "title": "Type 1 Diabetes Insulin Pump Study", "status": "RECRUITING", "conditions": ["Type 1 Diabetes"], "brief_summary": "A study of an insulin pump for type 1 diabetes.", "locations": ["Minneapolis, Minnesota, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0072", "title": "Obesity Weight Management Study", "status": "RECRUITING", "conditions": ["Obesity"], "brief_summary": "A weight management program study.", "locations": ["Minneapolis, Minnesota, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0073", "title": "Hypertension Management Trial", "status": "RECRUITING", "conditions": ["Hypertension"], "brief_summary": "A blood pressure management trial.", "locations": ["Minneapolis, Minnesota, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0074", "title": "Chronic Kidney Disease Study", "status": "RECRUITING", "conditions": ["Chronic Kidney Disease"], "brief_summary": "A disease progression study for chronic kidney disease.", "locations": ["Minneapolis, Minnesota, United States"]}}
+      ]
+    },
+    {
+      "id": "acronym-egfr",
+      "category": "related_terminology_low_lexical_overlap",
+      "description": "Query uses the acronym; one relevant trial only spells the term out.",
+      "patient": {"condition": "EGFR-mutated lung cancer", "notes": "exon 19 deletion"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0080", "title": "EGFR Exon 19 Deletion Targeted Therapy Trial", "status": "RECRUITING", "conditions": ["EGFR-Mutated NSCLC"], "brief_summary": "A targeted therapy trial for EGFR exon 19 deletion lung cancer.", "locations": ["Durham, North Carolina, United States"]}},
+        {"relevance": 2, "trial": {"nct_id": "SYN-0081", "title": "Epidermal Growth Factor Receptor Mutation Lung Cancer Study", "status": "RECRUITING", "conditions": ["EGFR-Mutant Lung Cancer"], "brief_summary": "A study of tyrosine kinase inhibitors in epidermal growth factor receptor mutated lung cancer.", "locations": ["Durham, North Carolina, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0082", "title": "ALK-Rearranged Lung Cancer Study", "status": "RECRUITING", "conditions": ["ALK-Positive NSCLC"], "brief_summary": "A targeted therapy study for ALK-rearranged lung cancer.", "locations": ["Durham, North Carolina, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0083", "title": "Wild-Type Lung Cancer Chemotherapy Trial", "status": "RECRUITING", "conditions": ["Lung Cancer"], "brief_summary": "A chemotherapy trial for biomarker wild-type lung cancer.", "locations": ["Durham, North Carolina, United States"]}}
+      ]
+    },
+    {
+      "id": "combined-condition-location-phase",
+      "category": "phase_preference",
+      "description": "Combines location and phase preference on top of an exact condition match.",
+      "patient": {"condition": "multiple myeloma", "location": "Chicago", "phase_preferences": ["PHASE2"]},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0090", "title": "Phase 2 Multiple Myeloma Trial - Chicago Site", "status": "RECRUITING", "conditions": ["Multiple Myeloma"], "phases": ["PHASE2"], "brief_summary": "A phase 2 multiple myeloma trial enrolling at a Chicago site.", "locations": ["Chicago, Illinois, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0091", "title": "Phase 2 Multiple Myeloma Trial - Miami Site", "status": "RECRUITING", "conditions": ["Multiple Myeloma"], "phases": ["PHASE2"], "brief_summary": "A phase 2 multiple myeloma trial enrolling at a Miami site.", "locations": ["Miami, Florida, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0092", "title": "Phase 1 Multiple Myeloma Trial - Chicago Site", "status": "RECRUITING", "conditions": ["Multiple Myeloma"], "phases": ["PHASE1"], "brief_summary": "A phase 1 multiple myeloma trial enrolling at a Chicago site.", "locations": ["Chicago, Illinois, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0093", "title": "Phase 2 Lymphoma Trial - Chicago Site", "status": "RECRUITING", "conditions": ["Lymphoma"], "phases": ["PHASE2"], "brief_summary": "A phase 2 lymphoma trial enrolling at a Chicago site.", "locations": ["Chicago, Illinois, United States"]}}
+      ]
+    },
+    {
+      "id": "rare-disease-low-overlap",
+      "category": "related_terminology_low_lexical_overlap",
+      "description": "Rare-disease abbreviation vs. spelled-out clinical name; a related neurodegenerative distractor.",
+      "patient": {"condition": "ALS", "notes": "amyotrophic lateral sclerosis progressive weakness"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0100", "title": "Amyotrophic Lateral Sclerosis Riluzole Extension Study", "status": "RECRUITING", "conditions": ["Amyotrophic Lateral Sclerosis"], "interventions": ["Riluzole"], "brief_summary": "An extension study of riluzole for amyotrophic lateral sclerosis.", "locations": ["Rochester, Minnesota, United States"]}},
+        {"relevance": 2, "trial": {"nct_id": "SYN-0101", "title": "ALS Biomarker Natural History Study", "status": "RECRUITING", "conditions": ["ALS"], "brief_summary": "A natural history study of biomarkers in ALS.", "locations": ["Rochester, Minnesota, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0103", "title": "Multiple Sclerosis Disease Progression Study", "status": "RECRUITING", "conditions": ["Multiple Sclerosis"], "brief_summary": "A disease progression study for multiple sclerosis, another neurodegenerative condition.", "locations": ["Rochester, Minnesota, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0102", "title": "Parkinson's Disease Motor Symptom Study", "status": "RECRUITING", "conditions": ["Parkinson's Disease"], "brief_summary": "A motor symptom study for Parkinson's disease.", "locations": ["Rochester, Minnesota, United States"]}}
+      ]
+    },
+    {
+      "id": "intervention-preference-drugname",
+      "category": "treatment_preference",
+      "description": "Preference expressed as a specific drug name rather than a treatment class.",
+      "patient": {"condition": "rheumatoid arthritis", "intervention_preferences": ["methotrexate"]},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0110", "title": "Rheumatoid Arthritis Methotrexate Combination Trial", "status": "RECRUITING", "conditions": ["Rheumatoid Arthritis"], "interventions": ["Methotrexate", "Adalimumab"], "brief_summary": "A combination trial of methotrexate and adalimumab for rheumatoid arthritis.", "locations": ["Philadelphia, Pennsylvania, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0113", "title": "Psoriatic Arthritis Methotrexate Study", "status": "RECRUITING", "conditions": ["Psoriatic Arthritis"], "interventions": ["Methotrexate"], "brief_summary": "A methotrexate study for psoriatic arthritis.", "locations": ["Philadelphia, Pennsylvania, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0111", "title": "Rheumatoid Arthritis Biologic Monotherapy Study", "status": "RECRUITING", "conditions": ["Rheumatoid Arthritis"], "interventions": ["Adalimumab"], "brief_summary": "A biologic monotherapy study for rheumatoid arthritis.", "locations": ["Philadelphia, Pennsylvania, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0112", "title": "Osteoarthritis Physical Therapy Study", "status": "RECRUITING", "conditions": ["Osteoarthritis"], "brief_summary": "A physical therapy study for osteoarthritis.", "locations": ["Philadelphia, Pennsylvania, United States"]}}
+      ]
+    },
+    {
+      "id": "location-remote-decentralized",
+      "category": "location_preference",
+      "description": "Patient is far from urban sites; a decentralized/remote trial should be favored.",
+      "patient": {"condition": "major depressive disorder", "location": "rural Montana"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0120", "title": "Decentralized Major Depressive Disorder Digital Therapeutics Trial", "status": "RECRUITING", "conditions": ["Major Depressive Disorder"], "brief_summary": "A fully decentralized digital therapeutics trial for major depressive disorder.", "locations": ["Remote", "Decentralized - Nationwide"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0121", "title": "Major Depressive Disorder Trial - Urban Sites Only", "status": "RECRUITING", "conditions": ["Major Depressive Disorder"], "brief_summary": "A major depressive disorder trial enrolling only at urban sites.", "locations": ["Boston, Massachusetts, United States", "New York, New York, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0122", "title": "Generalized Anxiety Disorder Trial", "status": "RECRUITING", "conditions": ["Generalized Anxiety Disorder"], "brief_summary": "A remote trial for generalized anxiety disorder.", "locations": ["Remote"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0123", "title": "Bipolar Disorder Maintenance Study", "status": "RECRUITING", "conditions": ["Bipolar Disorder"], "brief_summary": "A maintenance therapy study for bipolar disorder.", "locations": ["Denver, Colorado, United States"]}}
+      ]
+    },
+    {
+      "id": "phase-preference-early-phase1",
+      "category": "phase_preference",
+      "description": "Early Phase 1 preference on a condition with several phase options.",
+      "patient": {"condition": "pancreatic cancer", "phase_preferences": ["EARLY_PHASE1"]},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0130", "title": "Early Phase 1 Pancreatic Cancer Dose Finding Study", "status": "RECRUITING", "conditions": ["Pancreatic Cancer"], "phases": ["EARLY_PHASE1"], "brief_summary": "An early phase 1 dose-finding study for pancreatic cancer.", "locations": ["San Diego, California, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0131", "title": "Phase 3 Pancreatic Cancer Chemotherapy Trial", "status": "RECRUITING", "conditions": ["Pancreatic Cancer"], "phases": ["PHASE3"], "brief_summary": "A phase 3 chemotherapy trial for pancreatic cancer.", "locations": ["San Diego, California, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0132", "title": "Early Phase 1 Colorectal Cancer Study", "status": "RECRUITING", "conditions": ["Colorectal Cancer"], "phases": ["EARLY_PHASE1"], "brief_summary": "An early phase 1 study for colorectal cancer.", "locations": ["San Diego, California, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0133", "title": "Pancreatic Cyst Surveillance Registry", "status": "RECRUITING", "conditions": ["Pancreatic Cyst"], "brief_summary": "A surveillance registry for pancreatic cysts, a non-cancerous condition.", "locations": ["San Diego, California, United States"]}}
+      ]
+    },
+    {
+      "id": "eligibility-sex-restricted",
+      "category": "eligibility_incompatibility",
+      "description": "A textually relevant trial that is sex-eligibility-incompatible for this patient.",
+      "patient": {"condition": "ovarian cancer", "age": 50, "sex": "female"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0140", "title": "Ovarian Cancer PARP Inhibitor Maintenance Trial", "status": "RECRUITING", "conditions": ["Ovarian Cancer"], "interventions": ["PARP Inhibitor"], "brief_summary": "A maintenance trial of a PARP inhibitor for ovarian cancer.", "locations": ["St. Louis, Missouri, United States"], "sex": "FEMALE", "minimum_age": "18 Years"}},
+        {"relevance": 2, "trial": {"nct_id": "SYN-0143", "title": "Ovarian Cancer Genetic Risk Registry", "status": "RECRUITING", "conditions": ["Ovarian Cancer"], "brief_summary": "A genetic risk registry study for ovarian cancer.", "locations": ["St. Louis, Missouri, United States"], "sex": "FEMALE", "minimum_age": "18 Years"}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0141", "title": "Ovarian Cancer Screening Study - Male Control Cohort", "status": "RECRUITING", "conditions": ["Ovarian Cancer"], "brief_summary": "A screening biomarker study for ovarian cancer with a male control cohort.", "locations": ["St. Louis, Missouri, United States"], "sex": "MALE"}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0142", "title": "Testicular Cancer Trial", "status": "RECRUITING", "conditions": ["Testicular Cancer"], "brief_summary": "A treatment trial for testicular cancer.", "locations": ["St. Louis, Missouri, United States"], "sex": "MALE"}}
+      ]
+    },
+    {
+      "id": "multi-signal-alignment",
+      "category": "treatment_preference",
+      "description": "Intervention preference and location preference both point to the same best trial.",
+      "patient": {"condition": "cystic fibrosis", "intervention_preferences": ["CFTR modulator"], "location": "Denver"},
+      "trials": [
+        {"relevance": 2, "trial": {"nct_id": "SYN-0150", "title": "CFTR Modulator Therapy Trial - Denver Site", "status": "RECRUITING", "conditions": ["Cystic Fibrosis"], "interventions": ["CFTR Modulator", "Elexacaftor"], "brief_summary": "A CFTR modulator therapy trial for cystic fibrosis enrolling at a Denver site.", "locations": ["Denver, Colorado, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0152", "title": "CFTR Modulator Therapy Trial - Seattle Site", "status": "RECRUITING", "conditions": ["Cystic Fibrosis"], "interventions": ["CFTR Modulator"], "brief_summary": "A CFTR modulator therapy trial for cystic fibrosis enrolling at a Seattle site.", "locations": ["Seattle, Washington, United States"]}},
+        {"relevance": 1, "trial": {"nct_id": "SYN-0151", "title": "Cystic Fibrosis Airway Clearance Study - Denver Site", "status": "RECRUITING", "conditions": ["Cystic Fibrosis"], "interventions": ["Airway Clearance Therapy"], "brief_summary": "An airway clearance therapy study for cystic fibrosis enrolling at a Denver site.", "locations": ["Denver, Colorado, United States"]}},
+        {"relevance": 0, "trial": {"nct_id": "SYN-0153", "title": "Asthma Inhaler Adherence Study", "status": "RECRUITING", "conditions": ["Asthma"], "brief_summary": "An inhaler adherence study for asthma enrolling at a Denver site.", "locations": ["Denver, Colorado, United States"]}}
+      ]
+    }
+  ]
+}

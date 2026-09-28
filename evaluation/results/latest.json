@@ -1,0 +1,1387 @@
+{
+  "generated_at": "2026-09-28T18:20:12.980829+00:00",
+  "ablation": {
+    "num_cases": 16,
+    "ks": [
+      3,
+      5
+    ],
+    "aggregate": {
+      "lexical": {
+        "mrr": 1.0,
+        "recall@3": 0.9479,
+        "ndcg@3": 0.8803,
+        "recall@5": 1.0,
+        "ndcg@5": 0.9018
+      },
+      "dense": {
+        "mrr": 1.0,
+        "recall@3": 1.0,
+        "ndcg@3": 0.8806,
+        "recall@5": 1.0,
+        "ndcg@5": 0.8806
+      },
+      "hybrid": {
+        "mrr": 1.0,
+        "recall@3": 0.9688,
+        "ndcg@3": 0.9586,
+        "recall@5": 1.0,
+        "ndcg@5": 0.9751
+      }
+    },
+    "cases": [
+      {
+        "case_id": "exact-condition-breast-cancer",
+        "category": "exact_condition",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "exact-condition-breast-cancer",
+          "category": "exact_condition",
+          "expected_relevant": [
+            "SYN-0001",
+            "SYN-0002",
+            "SYN-0004"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0004",
+              "score": 0.6898,
+              "lexical_score": 1.0,
+              "semantic_score": 0.6328,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "breast",
+                "cancer",
+                "metastatic"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0001",
+              "score": 0.6885,
+              "lexical_score": 0.9876,
+              "semantic_score": 0.6406,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "breast",
+                "cancer",
+                "metastatic"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0002",
+              "score": 0.2916,
+              "lexical_score": 0.5202,
+              "semantic_score": 0.4516,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "breast",
+                "cancer"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0003",
+              "score": 0.0,
+              "lexical_score": 0.0,
+              "semantic_score": 0.0,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "paraphrase-nsclc-acronym",
+        "category": "related_terminology_low_lexical_overlap",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 0.5,
+            "ndcg@3": 0.613147,
+            "recall@5": 1.0,
+            "ndcg@5": 0.877215
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.919721,
+            "recall@5": 1.0,
+            "ndcg@5": 0.919721
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 0.5,
+            "ndcg@3": 0.613147,
+            "recall@5": 1.0,
+            "ndcg@5": 0.877215
+          }
+        },
+        "diagnostics": {
+          "case_id": "paraphrase-nsclc-acronym",
+          "category": "related_terminology_low_lexical_overlap",
+          "expected_relevant": [
+            "SYN-0010",
+            "SYN-0011"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0011",
+              "score": 0.6884,
+              "lexical_score": 1.0,
+              "semantic_score": 0.6281,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "advanced",
+                "cancer",
+                "cell",
+                "lung",
+                "non-small"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0012",
+              "score": 0.391,
+              "lexical_score": 0.6924,
+              "semantic_score": 0.611,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer",
+                "cell",
+                "disease",
+                "lung"
+              ],
+              "relevance": 0
+            },
+            {
+              "nct_id": "SYN-0013",
+              "score": 0.0979,
+              "lexical_score": 0.1125,
+              "semantic_score": 0.2137,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer"
+              ],
+              "relevance": 0
+            },
+            {
+              "nct_id": "SYN-0010",
+              "score": 0.073,
+              "lexical_score": 0.0,
+              "semantic_score": 0.2432,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 2
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "paraphrase-heart-attack",
+        "category": "related_terminology_low_lexical_overlap",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.821314,
+            "recall@5": 1.0,
+            "ndcg@5": 0.821314
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.757924,
+            "recall@5": 1.0,
+            "ndcg@5": 0.757924
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.821314,
+            "recall@5": 1.0,
+            "ndcg@5": 0.821314
+          }
+        },
+        "diagnostics": {
+          "case_id": "paraphrase-heart-attack",
+          "category": "related_terminology_low_lexical_overlap",
+          "expected_relevant": [
+            "SYN-0020",
+            "SYN-0021",
+            "SYN-0022"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0022",
+              "score": 0.3997,
+              "lexical_score": 1.0,
+              "semantic_score": 0.3322,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "heart"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0020",
+              "score": 0.2398,
+              "lexical_score": 0.5527,
+              "semantic_score": 0.2466,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cardiac"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0021",
+              "score": 0.1068,
+              "lexical_score": 0.0,
+              "semantic_score": 0.3561,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0023",
+              "score": 0.0058,
+              "lexical_score": 0.0,
+              "semantic_score": 0.0193,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "intervention-preference-immunotherapy",
+        "category": "treatment_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.821314,
+            "recall@5": 1.0,
+            "ndcg@5": 0.821314
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.757924,
+            "recall@5": 1.0,
+            "ndcg@5": 0.757924
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "intervention-preference-immunotherapy",
+          "category": "treatment_preference",
+          "expected_relevant": [
+            "SYN-0030",
+            "SYN-0031",
+            "SYN-0032"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0030",
+              "score": 0.7285,
+              "lexical_score": 0.9676,
+              "semantic_score": 0.5273,
+              "structured_contribution": 0.28,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0032",
+              "score": 0.6756,
+              "lexical_score": 0.9522,
+              "semantic_score": 0.6329,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0031",
+              "score": 0.6696,
+              "lexical_score": 1.0,
+              "semantic_score": 0.5652,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0033",
+              "score": 0.0,
+              "lexical_score": 0.0,
+              "semantic_score": 0.0,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "location-preference-toronto",
+        "category": "location_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "location-preference-toronto",
+          "category": "location_preference",
+          "expected_relevant": [
+            "SYN-0040",
+            "SYN-0041",
+            "SYN-0042"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0040",
+              "score": 0.7532,
+              "lexical_score": 1.0,
+              "semantic_score": 0.6772,
+              "structured_contribution": 0.25,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0041",
+              "score": 0.6847,
+              "lexical_score": 0.9841,
+              "semantic_score": 0.6318,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0042",
+              "score": 0.6418,
+              "lexical_score": 0.8986,
+              "semantic_score": 0.5739,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0043",
+              "score": 0.1996,
+              "lexical_score": 0.228,
+              "semantic_score": 0.2708,
+              "structured_contribution": 0.05,
+              "matched_terms": [
+                "cancer"
+              ],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "phase-preference-phase3",
+        "category": "phase_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.821314,
+            "recall@5": 1.0,
+            "ndcg@5": 0.821314
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.757924,
+            "recall@5": 1.0,
+            "ndcg@5": 0.757924
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "phase-preference-phase3",
+          "category": "phase_preference",
+          "expected_relevant": [
+            "SYN-0050",
+            "SYN-0051",
+            "SYN-0052"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0050",
+              "score": 0.7116,
+              "lexical_score": 0.9805,
+              "semantic_score": 0.4915,
+              "structured_contribution": 0.27,
+              "matched_terms": [
+                "melanoma"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0051",
+              "score": 0.656,
+              "lexical_score": 1.0,
+              "semantic_score": 0.5201,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "melanoma"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0052",
+              "score": 0.6506,
+              "lexical_score": 0.9805,
+              "semantic_score": 0.5212,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "melanoma"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0053",
+              "score": 0.1294,
+              "lexical_score": 0.0,
+              "semantic_score": 0.198,
+              "structured_contribution": 0.07,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "eligibility-age-restricted",
+        "category": "eligibility_incompatibility",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.951443,
+            "recall@5": 1.0,
+            "ndcg@5": 0.951443
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.951443,
+            "recall@5": 1.0,
+            "ndcg@5": 0.951443
+          }
+        },
+        "diagnostics": {
+          "case_id": "eligibility-age-restricted",
+          "category": "eligibility_incompatibility",
+          "expected_relevant": [
+            "SYN-0060",
+            "SYN-0061",
+            "SYN-0062"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0061",
+              "score": 0.693,
+              "lexical_score": 1.0,
+              "semantic_score": 0.6433,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "prostate"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0062",
+              "score": 0.665,
+              "lexical_score": 0.9838,
+              "semantic_score": 0.5665,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "prostate"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0060",
+              "score": 0.6435,
+              "lexical_score": 0.9838,
+              "semantic_score": 0.4948,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "prostate"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0063",
+              "score": 0.158,
+              "lexical_score": 0.2319,
+              "semantic_score": 0.2947,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer"
+              ],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "distractor-heavy-diabetes",
+        "category": "distractor",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.796708,
+            "recall@5": 1.0,
+            "ndcg@5": 0.796708
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "distractor-heavy-diabetes",
+          "category": "distractor",
+          "expected_relevant": [
+            "SYN-0070",
+            "SYN-0071"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0070",
+              "score": 0.6859,
+              "lexical_score": 0.9815,
+              "semantic_score": 0.6382,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "diabetes",
+                "type"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0071",
+              "score": 0.4384,
+              "lexical_score": 1.0,
+              "semantic_score": 0.4612,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "diabetes",
+                "type"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0074",
+              "score": 0.0699,
+              "lexical_score": 0.0,
+              "semantic_score": 0.2329,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            },
+            {
+              "nct_id": "SYN-0072",
+              "score": 0.0448,
+              "lexical_score": 0.0,
+              "semantic_score": 0.1493,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            },
+            {
+              "nct_id": "SYN-0073",
+              "score": 0.0434,
+              "lexical_score": 0.0,
+              "semantic_score": 0.1446,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "acronym-egfr",
+        "category": "related_terminology_low_lexical_overlap",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 0.666667,
+            "ndcg@3": 0.834448,
+            "recall@5": 1.0,
+            "ndcg@5": 0.914309
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "acronym-egfr",
+          "category": "related_terminology_low_lexical_overlap",
+          "expected_relevant": [
+            "SYN-0080",
+            "SYN-0081",
+            "SYN-0082"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0080",
+              "score": 0.5573,
+              "lexical_score": 1.0,
+              "semantic_score": 0.8578,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer",
+                "deletion",
+                "egfr-mutated",
+                "exon",
+                "lung"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0081",
+              "score": 0.2293,
+              "lexical_score": 0.0671,
+              "semantic_score": 0.6972,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0082",
+              "score": 0.1655,
+              "lexical_score": 0.0666,
+              "semantic_score": 0.4849,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0083",
+              "score": 0.1531,
+              "lexical_score": 0.0755,
+              "semantic_score": 0.4351,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer",
+                "lung"
+              ],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "combined-condition-location-phase",
+        "category": "phase_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.821314,
+            "recall@5": 1.0,
+            "ndcg@5": 0.821314
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "combined-condition-location-phase",
+          "category": "phase_preference",
+          "expected_relevant": [
+            "SYN-0090",
+            "SYN-0091",
+            "SYN-0092"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0090",
+              "score": 0.7794,
+              "lexical_score": 1.0,
+              "semantic_score": 0.5312,
+              "structured_contribution": 0.32,
+              "matched_terms": [
+                "multiple",
+                "myeloma"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0091",
+              "score": 0.728,
+              "lexical_score": 1.0,
+              "semantic_score": 0.5266,
+              "structured_contribution": 0.27,
+              "matched_terms": [
+                "multiple",
+                "myeloma"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0092",
+              "score": 0.7162,
+              "lexical_score": 1.0,
+              "semantic_score": 0.554,
+              "structured_contribution": 0.25,
+              "matched_terms": [
+                "multiple",
+                "myeloma"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0093",
+              "score": 0.1707,
+              "lexical_score": 0.0,
+              "semantic_score": 0.1691,
+              "structured_contribution": 0.12,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "rare-disease-low-overlap",
+        "category": "related_terminology_low_lexical_overlap",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "rare-disease-low-overlap",
+          "category": "related_terminology_low_lexical_overlap",
+          "expected_relevant": [
+            "SYN-0100",
+            "SYN-0101",
+            "SYN-0103"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0101",
+              "score": 0.4978,
+              "lexical_score": 0.4213,
+              "semantic_score": 0.5712,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "als"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0100",
+              "score": 0.4479,
+              "lexical_score": 1.0,
+              "semantic_score": 0.4929,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "amyotrophic",
+                "lateral",
+                "sclerosis"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0103",
+              "score": 0.2118,
+              "lexical_score": 0.2308,
+              "semantic_score": 0.4754,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "sclerosis"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0102",
+              "score": 0.0917,
+              "lexical_score": 0.0,
+              "semantic_score": 0.3056,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "intervention-preference-drugname",
+        "category": "treatment_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.821314,
+            "recall@5": 1.0,
+            "ndcg@5": 0.821314
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.821314,
+            "recall@5": 1.0,
+            "ndcg@5": 0.821314
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "intervention-preference-drugname",
+          "category": "treatment_preference",
+          "expected_relevant": [
+            "SYN-0110",
+            "SYN-0111",
+            "SYN-0113"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0110",
+              "score": 0.7026,
+              "lexical_score": 0.9661,
+              "semantic_score": 0.4426,
+              "structured_contribution": 0.28,
+              "matched_terms": [
+                "arthritis",
+                "rheumatoid"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0111",
+              "score": 0.6633,
+              "lexical_score": 1.0,
+              "semantic_score": 0.5442,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "arthritis",
+                "rheumatoid"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0113",
+              "score": 0.2879,
+              "lexical_score": 0.3521,
+              "semantic_score": 0.341,
+              "structured_contribution": 0.08,
+              "matched_terms": [
+                "arthritis"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0112",
+              "score": 0.0963,
+              "lexical_score": 0.0,
+              "semantic_score": 0.321,
+              "structured_contribution": 0.0,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "location-remote-decentralized",
+        "category": "location_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.796708,
+            "recall@5": 1.0,
+            "ndcg@5": 0.796708
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "location-remote-decentralized",
+          "category": "location_preference",
+          "expected_relevant": [
+            "SYN-0120",
+            "SYN-0121"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0120",
+              "score": 0.6685,
+              "lexical_score": 1.0,
+              "semantic_score": 0.5618,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "depressive",
+                "disorder",
+                "major"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0121",
+              "score": 0.6539,
+              "lexical_score": 0.91,
+              "semantic_score": 0.6029,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "depressive",
+                "disorder",
+                "major"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0122",
+              "score": 0.1557,
+              "lexical_score": 0.0796,
+              "semantic_score": 0.4395,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "disorder"
+              ],
+              "relevance": 0
+            },
+            {
+              "nct_id": "SYN-0123",
+              "score": 0.1356,
+              "lexical_score": 0.0772,
+              "semantic_score": 0.3747,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "disorder"
+              ],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "phase-preference-early-phase1",
+        "category": "phase_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.796708,
+            "recall@5": 1.0,
+            "ndcg@5": 0.796708
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.796708,
+            "recall@5": 1.0,
+            "ndcg@5": 0.796708
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "phase-preference-early-phase1",
+          "category": "phase_preference",
+          "expected_relevant": [
+            "SYN-0130",
+            "SYN-0131"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0130",
+              "score": 0.7103,
+              "lexical_score": 0.9443,
+              "semantic_score": 0.5233,
+              "structured_contribution": 0.27,
+              "matched_terms": [
+                "cancer",
+                "pancreatic"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0131",
+              "score": 0.6873,
+              "lexical_score": 1.0,
+              "semantic_score": 0.6243,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "pancreatic"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0133",
+              "score": 0.3066,
+              "lexical_score": 0.5,
+              "semantic_score": 0.5219,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "pancreatic"
+              ],
+              "relevance": 0
+            },
+            {
+              "nct_id": "SYN-0132",
+              "score": 0.2978,
+              "lexical_score": 0.4927,
+              "semantic_score": 0.2667,
+              "structured_contribution": 0.07,
+              "matched_terms": [
+                "cancer"
+              ],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "eligibility-sex-restricted",
+        "category": "eligibility_incompatibility",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.951443,
+            "recall@5": 1.0,
+            "ndcg@5": 0.951443
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.951443,
+            "recall@5": 1.0,
+            "ndcg@5": 0.951443
+          }
+        },
+        "diagnostics": {
+          "case_id": "eligibility-sex-restricted",
+          "category": "eligibility_incompatibility",
+          "expected_relevant": [
+            "SYN-0140",
+            "SYN-0141",
+            "SYN-0143"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0143",
+              "score": 0.7109,
+              "lexical_score": 1.0,
+              "semantic_score": 0.7031,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "ovarian"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0141",
+              "score": 0.679,
+              "lexical_score": 0.9547,
+              "semantic_score": 0.6421,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "ovarian"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0140",
+              "score": 0.6497,
+              "lexical_score": 0.9693,
+              "semantic_score": 0.5297,
+              "structured_contribution": 0.2,
+              "matched_terms": [
+                "cancer",
+                "ovarian"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0142",
+              "score": 0.1664,
+              "lexical_score": 0.2519,
+              "semantic_score": 0.3027,
+              "structured_contribution": 0.0,
+              "matched_terms": [
+                "cancer"
+              ],
+              "relevance": 0
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "multi-signal-alignment",
+        "category": "treatment_preference",
+        "metrics": {
+          "lexical": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.757924,
+            "recall@5": 1.0,
+            "ndcg@5": 0.757924
+          },
+          "dense": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 0.757924,
+            "recall@5": 1.0,
+            "ndcg@5": 0.757924
+          },
+          "hybrid": {
+            "mrr": 1.0,
+            "recall@3": 1.0,
+            "ndcg@3": 1.0,
+            "recall@5": 1.0,
+            "ndcg@5": 1.0
+          }
+        },
+        "diagnostics": {
+          "case_id": "multi-signal-alignment",
+          "category": "treatment_preference",
+          "expected_relevant": [
+            "SYN-0150",
+            "SYN-0151",
+            "SYN-0152"
+          ],
+          "hybrid_ranking": [
+            {
+              "nct_id": "SYN-0150",
+              "score": 0.7435,
+              "lexical_score": 0.8616,
+              "semantic_score": 0.5167,
+              "structured_contribution": 0.33,
+              "matched_terms": [
+                "cystic",
+                "fibrosis"
+              ],
+              "relevance": 2
+            },
+            {
+              "nct_id": "SYN-0151",
+              "score": 0.7206,
+              "lexical_score": 1.0,
+              "semantic_score": 0.5687,
+              "structured_contribution": 0.25,
+              "matched_terms": [
+                "cystic",
+                "fibrosis"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0152",
+              "score": 0.7186,
+              "lexical_score": 0.8752,
+              "semantic_score": 0.5868,
+              "structured_contribution": 0.28,
+              "matched_terms": [
+                "cystic",
+                "fibrosis"
+              ],
+              "relevance": 1
+            },
+            {
+              "nct_id": "SYN-0153",
+              "score": 0.05,
+              "lexical_score": 0.0,
+              "semantic_score": 0.0,
+              "structured_contribution": 0.05,
+              "matched_terms": [],
+              "relevance": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "esr_checks": {
+    "deterministic": true,
+    "missing_evidence": {
+      "coverage_with_evidence": 0.6,
+      "coverage_without_evidence": 0.35,
+      "coverage_decreased": true,
+      "score_not_forced_to_zero": true
+    },
+    "does_not_change_clinical_ordering": true
+  }
+}

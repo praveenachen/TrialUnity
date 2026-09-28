@@ -120,6 +120,10 @@ After starting the app, interactive docs are available at `/docs`.
 | `POST` | `/api/recommendations` | Generate profile-based recommendations |
 | `POST` | `/api/assistant/answer` | Explain a trial using grounded AI assistance |
 
+## Retrieval Evaluation
+
+`evaluation/` holds a small, reproducible benchmark proving whether hybrid retrieval actually outranks BM25-only and embeddings-only baselines, with honest results (including where hybrid doesn't win). Run it with `python -m evaluation.run`; see [evaluation/README.md](evaluation/README.md) for the benchmark, metrics, current results, and limitations.
+
 ## Local Setup
 
 ### Run With Python
