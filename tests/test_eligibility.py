@@ -80,7 +80,12 @@ def test_contradictory_bounds():
 
 
 def test_empty_vocabulary_and_no_trials():
+    # "the" is a stopword: BM25 sees an empty query vocabulary and contributes 0.
+    # Dense retrieval still embeds the raw text, so an identical (if degenerate)
+    # query/document pair is not forced to 0 -- only "does not crash" is guaranteed.
     service = RecommendationService()
     patient = PatientProfile(condition="the")
     assert service.recommend(patient, []) == []
-    assert service.recommend(patient, [Trial(nct_id="1", title="the")])[0].score == 0
+    result = service.recommend(patient, [Trial(nct_id="1", title="the")])[0]
+    assert 0 <= result.score <= 1
+    assert result.score_breakdown["lexical"] == 0

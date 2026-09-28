@@ -10,7 +10,7 @@ TrialUnity supports a practical healthcare AI workflow:
 
 1. A user submits a patient/profile intake form.
 2. The backend queries and normalizes ClinicalTrials.gov study records.
-3. A retrieval pipeline ranks trials using semantic similarity and structured matching signals.
+3. A hybrid retrieval pipeline ranks trials using lexical (BM25) and semantic (embedding) relevance plus structured matching signals.
 4. Each result includes a patient-friendly summary, ranking rationale, matched terms, and eligibility considerations.
 5. An optional LLM assistant can explain eligibility or trial details while staying grounded in the selected trial record.
 
@@ -40,17 +40,18 @@ tests/                Focused backend tests
 
 ## Retrieval And Recommendation Methodology
 
-The current retrieval pipeline uses a lightweight TF-IDF semantic baseline with cosine similarity. This keeps the project easy to run locally while still demonstrating the same system design used by embedding-based retrieval systems:
+The retrieval pipeline is a hybrid of lexical and dense semantic search, combined with weighted structured signals:
 
-- patient profile text is converted into a retrieval query
-- trial titles, conditions, interventions, summaries, phases, and locations become searchable documents
-- semantic relevance is combined with weighted structured signals
-- condition, intervention, phase, and location contribute to the relevance score; matched terms are explanatory only
-- structured age, sex, and recruitment checks are returned separately; incompatible results rank after other results, and missing or unsupported data remains unknown
+- patient condition and notes are converted into the lexical/semantic retrieval query; location, phase, and intervention preferences contribute once through explicit structured signals
+- trial titles, conditions, interventions, summaries, phases, and locations become searchable documents (free-text eligibility criteria are excluded so their length or wording can never influence ranking)
+- **lexical relevance** comes from BM25 keyword matching over that text
+- **semantic relevance** comes from cosine similarity between local SentenceTransformer embeddings (`all-MiniLM-L6-v2`, loaded once per process, no external API)
+- condition, intervention, phase, and location contribute additional weighted signals; matched terms are explanatory only
+- every recommendation returns normalized lexical, semantic, and structured relevance signals plus their weights and weighted contributions; the weighted sum is the overall relevance score, not an eligibility probability
+- structured age, sex, and recruitment checks are returned separately and never affect the relevance score; incompatible results rank after other results, and missing or unsupported data remains unknown
 - structured compatibility is not full medical eligibility; free-text criteria always require review
-- every recommendation returns a clear explanation rather than only a numeric rank
 
-This design can be upgraded to sentence-transformer embeddings or a vector database without changing the API contract.
+This design can be upgraded to a vector database without changing the API contract if the trial catalog outgrows in-memory ranking.
 
 ## ClinicalTrials.gov Integration
 
@@ -176,7 +177,8 @@ python -m pytest
 
 ## Engineering Tradeoffs
 
-- TF-IDF retrieval was chosen as a reliable local baseline. It is explainable, dependency-light, and easy to replace with embeddings later.
+- Hybrid BM25 + local SentenceTransformer retrieval was chosen over a single method: BM25 covers exact keyword/acronym matches embeddings can miss, embeddings cover paraphrase and synonym matches keyword search misses. The embedding model runs locally and loads once per process, so there is no external API dependency or per-request reload cost.
+- Free-text eligibility criteria are deliberately excluded from the search index, keeping ranking relevance and eligibility judgment independent as a matter of architecture, not just convention.
 - The ClinicalTrials.gov client falls back to local sample data so demos do not fail when offline.
 - The frontend is static HTML/CSS/JS served by FastAPI to avoid unnecessary build tooling.
 - The old Streamlit prototype entrypoint is retained only as a migration note.
@@ -184,7 +186,7 @@ python -m pytest
 
 ## Future Improvements
 
-- Add sentence-transformer embeddings and a small vector index.
+- Add a small vector index if the trial catalog grows past in-memory-ranking scale.
 - Cache ClinicalTrials.gov query results for faster repeat searches.
 - Explore additional validated structured eligibility checks.
 - Add trial comparison workflows.

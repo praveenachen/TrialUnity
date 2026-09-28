@@ -72,9 +72,32 @@ class StructuredEligibility(BaseModel):
     criteria: dict[str, EligibilityCriterion]
 
 
+class RelevanceScores(BaseModel):
+    """Normalized ranking signals; none represent eligibility probability."""
+
+    overall: float = Field(ge=0, le=1, description="Relative ranking score.")
+    lexical: float = Field(ge=0, le=1, description="Normalized BM25 relevance.")
+    semantic: float = Field(ge=0, le=1, description="Non-negative cosine relevance.")
+    structured: dict[str, float] = Field(
+        default_factory=dict,
+        description="Structured relevance matches on a 0-to-1 scale.",
+    )
+    weighted_components: dict[str, float] = Field(
+        default_factory=dict,
+        description="Weighted contributions that sum to overall.",
+    )
+    weights: dict[str, float] = Field(default_factory=dict)
+
+
 class TrialRecommendation(BaseModel):
     trial: Trial
     score: float = Field(ge=0, le=1, description="Relative relevance score, not medical eligibility or probability.")
+    score_breakdown: dict[str, float] = Field(
+        default_factory=dict,
+        description="Weighted contribution of each ranking signal (lexical, semantic, condition, "
+        "intervention, phase, location); values sum to `score`.",
+    )
+    relevance: RelevanceScores
     explanation: MatchExplanation
     structured_eligibility: StructuredEligibility | None = None
 

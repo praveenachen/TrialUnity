@@ -1,19 +1,21 @@
-from backend.app.models.schemas import MatchExplanation, PatientProfile, Trial, TrialRecommendation
+from backend.app.models.schemas import (
+    MatchExplanation, PatientProfile, RelevanceScores, Trial, TrialRecommendation,
+)
 from backend.app.services.eligibility import evaluate_eligibility
-from backend.app.services.retrieval import SemanticRetriever
+from backend.app.services.retrieval import WEIGHTS, HybridRetriever
 from backend.app.services.text import first_sentence
 
 
 class RecommendationService:
     def __init__(self) -> None:
-        self.retriever = SemanticRetriever()
+        self.retriever = HybridRetriever()
 
     def recommend(self, patient: PatientProfile, trials: list[Trial], limit: int = 10) -> list[TrialRecommendation]:
         ranked = self.retriever.rank(patient, trials)
         results = []
-        for trial, score, matched_terms in ranked:
+        for trial, score, breakdown, components, matched_terms in ranked:
             eligibility = evaluate_eligibility(patient, trial)
-            explanation = self._explain(patient, trial, score, matched_terms)
+            explanation = self._explain(patient, trial, score, components, matched_terms)
             explanation.eligibility_notes.extend(
                 criterion.reason for criterion in eligibility.criteria.values()
                 if criterion.state == "incompatible"
@@ -23,14 +25,31 @@ class RecommendationService:
                 if criterion.state == "unknown"
             ] + ["Full eligibility criteria and site availability require study-team review."]
             results.append(TrialRecommendation(
-                trial=trial, score=score, explanation=explanation,
+                trial=trial,
+                score=score,
+                score_breakdown=breakdown,
+                relevance=RelevanceScores(
+                    overall=score,
+                    lexical=components["lexical"],
+                    semantic=components["semantic"],
+                    structured={
+                        name: components[name]
+                        for name in ("condition", "intervention", "phase", "location")
+                    },
+                    weighted_components=breakdown,
+                    weights=WEIGHTS,
+                ),
+                explanation=explanation,
                 structured_eligibility=eligibility,
             ))
         # Keep relevance unchanged; known structured conflicts form a separate final group.
         results.sort(key=lambda result: result.structured_eligibility.status == "incompatible")
         return results[:limit]
 
-    def _explain(self, patient: PatientProfile, trial: Trial, score: float, matched_terms: list[str]) -> MatchExplanation:
+    def _explain(
+        self, patient: PatientProfile, trial: Trial, score: float,
+        components: dict[str, float], matched_terms: list[str],
+    ) -> MatchExplanation:
         eligibility_notes = []
         if trial.sex and trial.sex.lower() != "all":
             eligibility_notes.append(f"Sex listed by the study: {trial.sex}.")
@@ -43,7 +62,8 @@ class RecommendationService:
 
         rationale_bits = [
             f"Relative relevance score {score:.2f} (not medical eligibility)",
-            f"condition focus includes {', '.join(trial.conditions[:3]) or 'related clinical terms'}",
+            f"normalized lexical relevance {components.get('lexical', 0):.2f}",
+            f"normalized semantic relevance {components.get('semantic', 0):.2f}",
         ]
         if matched_terms:
             rationale_bits.append(f"shared terms: {', '.join(matched_terms[:5])}")
