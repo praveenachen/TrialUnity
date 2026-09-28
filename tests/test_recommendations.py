@@ -282,6 +282,21 @@ def test_preferences_are_not_duplicated_in_lexical_or_semantic_query() -> None:
     assert captured_queries == ["cancer advanced disease", "cancer advanced disease"]
 
 
+def test_notes_still_influence_downstream_ranking() -> None:
+    profile = PatientProfile(condition="cancer", notes="metastatic biomarker recurrence")
+    trials = [
+        Trial(nct_id="notes-match", title="Cancer study", conditions=["Cancer"],
+              brief_summary="Metastatic biomarker recurrence cohort."),
+        Trial(nct_id="other-1", title="Cancer study", conditions=["Cancer"],
+              brief_summary="General supportive care."),
+        Trial(nct_id="other-2", title="Cancer study", conditions=["Cancer"],
+              brief_summary="Routine symptom monitoring."),
+    ]
+    results = RecommendationService().recommend(profile, trials)
+    assert results[0].trial.nct_id == "notes-match"
+    assert "biomarker" in results[0].explanation.matched_terms
+
+
 def test_equivalent_scores_use_nct_id_as_deterministic_tie_breaker() -> None:
     trials = [Trial(nct_id="NCT2", title="Same"), Trial(nct_id="NCT1", title="Same")]
     ranked = configured_retriever(

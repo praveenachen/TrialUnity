@@ -80,7 +80,7 @@ Key rules, enforced in code, not just by convention:
 - **Protocol sex inclusivity is explicitly labeled as not observed representation.** A trial open to "ALL" sexes is not the same claim as "enrollment turned out balanced."
 - **Race is never inferred from geography, names, or any other proxy.** Without both a reported enrollment distribution and a real, sourced benchmark, the component returns `insufficient_data`/`insufficient_benchmark` rather than a number.
 
-ESR lives in `backend/app/services/equity/` (`schemas.py`, `service.py`, `socioeconomic.py`, `sex.py`, `race.py`, `coverage.py`) and is exposed as `esr` on each `TrialRecommendation`. A future ranking layer may use ESR as a secondary objective; this phase only establishes the scoring/data contract.
+ESR lives in `backend/app/services/equity/` and is exposed as `esr` on each `TrialRecommendation`. Reported ClinicalTrials.gov baseline sex and race/ethnicity distributions are normalized during ingestion. Race scoring additionally requires an explicitly sourced, population-scoped benchmark supplied through the benchmark-provider contract; the production registry is empty by default. A future ranking layer may use ESR as a secondary objective; ESR currently remains separate from relevance ranking.
 
 ## ClinicalTrials.gov Integration
 
@@ -224,4 +224,4 @@ python -m pytest
 - Add trial comparison workflows.
 - Add CI.
 - Add clinician/researcher views for cohort diversity and recruitment planning.
-- **ESR data gaps (Phase 5):** ingest ClinicalTrials.gov's `resultsSection.baselineCharacteristicsModule` to populate `Trial.enrollment_sex_distribution` / `enrollment_race_distribution` so observed (not just prospective) ESR scoring actually triggers in production; source and wire a real, disclosed race/ethnicity reference benchmark (e.g. a disease-prevalence or census dataset) via `RaceBenchmark`; and consider an external area-deprivation or travel-time dataset to extend Socioeconomic Access beyond site/geography signals.
+- **Remaining ESR data gaps:** source and configure defensible condition/location-specific race and ethnicity reference distributions through `RaceBenchmarkProvider`; quantify how frequently posted results contain usable baseline demographics; reconcile studies that publish race and ethnicity as separate dimensions; and consider an external area-deprivation or travel-time dataset to extend Socioeconomic Access beyond site/geography signals.

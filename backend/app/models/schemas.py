@@ -50,12 +50,12 @@ class Trial(BaseModel):
     locations: list[str] = Field(default_factory=list)
     sponsor: str | None = None
     source_url: str | None = None
-    # Reported participant enrollment counts (e.g. {"MALE": 40, "FEMALE": 60}), keyed by
-    # category. Only present when a registry has published actual results (ClinicalTrials.gov
-    # resultsSection.baselineCharacteristicsModule); ingestion does not populate these yet, so
-    # they default to None and equity scoring falls back to prospective/insufficient-data modes.
-    enrollment_sex_distribution: dict[str, int] | None = None
-    enrollment_race_distribution: dict[str, int] | None = None
+    # Reported participant distributions, represented as non-negative category weights.
+    # Values may originate as counts or percentages; ESR normalizes them before comparison.
+    enrollment_sex_distribution: dict[str, float] | None = None
+    enrollment_race_distribution: dict[str, float] | None = None
+    enrollment_sex_source: str | None = None
+    enrollment_race_source: str | None = None
 
 
 class MatchExplanation(BaseModel):

@@ -1,6 +1,7 @@
 import pytest
 
 from backend.app.models.schemas import PatientProfile, Trial
+from backend.app.services.equity.benchmarks import RaceBenchmarkRegistry
 from backend.app.services.equity.race import RaceBenchmark, observed_race_component
 from backend.app.services.equity.service import WEIGHTS, compute_esr
 from backend.app.services.equity.sex import observed_sex_component, prospective_sex_component
@@ -19,6 +20,11 @@ def trial(**changes):
 RACE_BENCHMARK = RaceBenchmark(
     distribution={"WHITE": 0.6, "BLACK": 0.2, "ASIAN": 0.1, "OTHER": 0.1},
     source="Test census reference distribution",
+    population_scope="Test population",
+    condition_scope="Cancer",
+    location_scope="Boston",
+    version="v1",
+    year=2025,
 )
 
 
@@ -144,7 +150,9 @@ def test_race_scoring_requires_both_observed_distribution_and_benchmark() -> Non
     )
     assert both.score == 100.0  # identical distribution to the benchmark
     assert both.evidence_type == "observed_distribution_comparison"
-    assert both.source == RACE_BENCHMARK.source
+    assert RACE_BENCHMARK.source in both.source
+    assert "Reported participant enrollment" in both.source
+    assert "population=Test population" in both.source
 
 
 def test_race_similarity_decreases_as_distributions_diverge() -> None:
@@ -209,3 +217,86 @@ def test_socioeconomic_evidence_type_reflects_available_signals(
         trial(locations=trial_locations),
     )
     assert component.evidence_type == expected_evidence_type
+
+
+def test_observed_sex_replaces_prospective_protocol_scoring_and_keeps_provenance() -> None:
+    subject = trial(
+        sex="FEMALE",
+        enrollment_sex_distribution={"MALE": 50, "FEMALE": 50},
+        enrollment_sex_source="ClinicalTrials.gov reported baseline results",
+    )
+    result = compute_esr(PatientProfile(condition="cancer"), subject)
+    assert prospective_sex_component(subject).score == 0
+    assert result.components["sex"].score == 100
+    assert result.components["sex"].evidence_type == "observed_enrollment"
+    assert result.components["sex"].source == "ClinicalTrials.gov reported baseline results"
+
+
+def test_observed_race_without_benchmark_stays_null_and_preserves_source() -> None:
+    subject = trial(
+        enrollment_race_distribution={"WHITE": 60, "BLACK": 40},
+        enrollment_race_source="ClinicalTrials.gov reported baseline results",
+    )
+    result = compute_esr(PatientProfile(condition="cancer"), subject)
+    component = result.components["race"]
+    assert component.score is None
+    assert component.evidence_type == "insufficient_benchmark"
+    assert component.source == "ClinicalTrials.gov reported baseline results"
+
+
+def test_invalid_race_benchmark_is_insufficient_benchmark() -> None:
+    invalid = RaceBenchmark(
+        distribution={"WHITE": -1, "BLACK": 0},
+        source="Invalid fixture",
+        population_scope="Test",
+    )
+    component = observed_race_component(
+        trial(enrollment_race_distribution={"WHITE": 50, "BLACK": 50}), invalid
+    )
+    assert component.score is None
+    assert component.evidence_type == "insufficient_benchmark"
+
+    missing_scope = RaceBenchmark(
+        distribution={"WHITE": 0.5, "BLACK": 0.5},
+        source="Unscoped fixture",
+    )
+    component = observed_race_component(
+        trial(enrollment_race_distribution={"WHITE": 50, "BLACK": 50}), missing_scope
+    )
+    assert component.score is None
+    assert component.evidence_type == "insufficient_benchmark"
+
+
+def test_benchmark_registry_selects_scoped_benchmark_and_exposes_contract() -> None:
+    general = RaceBenchmark(
+        distribution={"WHITE": 0.5, "BLACK": 0.5},
+        source="General source",
+        population_scope="Adults",
+        year=2020,
+    )
+    scoped = RACE_BENCHMARK
+    registry = RaceBenchmarkRegistry([general, scoped])
+    selected = registry.get_race_benchmark(condition="cancer", location="boston")
+    assert selected is scoped
+    assert selected.source_label == "Test census reference distribution"
+    assert selected.population_scope == "Test population"
+    assert selected.condition_scope == "Cancer"
+    assert selected.location_scope == "Boston"
+    assert selected.version == "v1"
+    assert selected.year == 2025
+    assert registry.get_race_benchmark(condition="diabetes", location="Toronto") is general
+
+
+def test_recommendation_service_accepts_benchmark_provider_without_affecting_rank() -> None:
+    subject = trial(enrollment_race_distribution={
+        "WHITE": 60, "BLACK": 20, "ASIAN": 10, "OTHER": 10,
+    })
+    patient = PatientProfile(condition="Cancer", location="Boston")
+    without = RecommendationService().recommend(patient, [subject])[0]
+    with_benchmark = RecommendationService(
+        RaceBenchmarkRegistry([RACE_BENCHMARK])
+    ).recommend(patient, [subject])[0]
+    assert without.esr.components["race"].evidence_type == "insufficient_benchmark"
+    assert with_benchmark.esr.components["race"].score == 100
+    assert without.score == with_benchmark.score
+    assert without.structured_eligibility == with_benchmark.structured_eligibility

@@ -12,7 +12,7 @@ recommendations = RecommendationService()
 @router.post("", response_model=TrialSearchResponse)
 async def recommend_trials(profile: PatientProfile) -> TrialSearchResponse:
     search_request = TrialSearchRequest(
-        query=" ".join([profile.condition, profile.notes or ""]).strip(),
+        query=profile.condition,
         condition=profile.condition,
         location=profile.location,
         page_size=25,

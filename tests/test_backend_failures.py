@@ -93,6 +93,25 @@ def test_recommendation_endpoint_contract(monkeypatch):
     assert 0 <= result["score"] <= 1
 
 
+def test_patient_notes_do_not_narrow_candidate_query(monkeypatch):
+    from backend.app.api.routes import recommendations
+
+    search = AsyncMock(return_value=([], "clinicaltrials.gov"))
+    monkeypatch.setattr(recommendations.client, "search", search)
+    with TestClient(app) as client:
+        response = client.post("/api/recommendations", json={
+            "condition": "lung cancer",
+            "notes": "rare biomarker after several prior therapies",
+            "location": "Toronto",
+        })
+    assert response.status_code == 200
+    request = search.await_args.args[0]
+    assert request.query == "lung cancer"
+    assert request.condition == "lung cancer"
+    assert request.location == "Toronto"
+    assert "biomarker" not in request.query
+
+
 def test_detail_fallback_source_and_frontend_mount(monkeypatch):
     def handler(request):
         raise httpx.ConnectError("offline")

@@ -3,13 +3,20 @@ from backend.app.models.schemas import (
 )
 from backend.app.services.eligibility import evaluate_eligibility
 from backend.app.services.equity.service import compute_esr
+from backend.app.services.equity.benchmarks import (
+    DEFAULT_RACE_BENCHMARK_PROVIDER, RaceBenchmarkProvider,
+)
 from backend.app.services.retrieval import WEIGHTS, HybridRetriever
 from backend.app.services.text import first_sentence
 
 
 class RecommendationService:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        race_benchmark_provider: RaceBenchmarkProvider = DEFAULT_RACE_BENCHMARK_PROVIDER,
+    ) -> None:
         self.retriever = HybridRetriever()
+        self.race_benchmark_provider = race_benchmark_provider
 
     def recommend(self, patient: PatientProfile, trials: list[Trial], limit: int = 10) -> list[TrialRecommendation]:
         ranked = self.retriever.rank(patient, trials)
@@ -42,7 +49,14 @@ class RecommendationService:
                 ),
                 explanation=explanation,
                 structured_eligibility=eligibility,
-                esr=compute_esr(patient, trial),
+                esr=compute_esr(
+                    patient,
+                    trial,
+                    race_benchmark=self.race_benchmark_provider.get_race_benchmark(
+                        condition=patient.condition,
+                        location=patient.location,
+                    ),
+                ),
             ))
         # Keep relevance unchanged; known structured conflicts form a separate final group.
         results.sort(key=lambda result: result.structured_eligibility.status == "incompatible")

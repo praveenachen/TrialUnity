@@ -7,9 +7,9 @@ supplied by the caller as a `RaceBenchmark`; without one, this always returns
 is also never inferred from site geography, patient location, or names.
 """
 import math
-from dataclasses import dataclass
 
 from backend.app.models.schemas import Trial
+from backend.app.services.equity.benchmarks import RaceBenchmark
 from backend.app.services.equity.schemas import ComponentEvidence
 
 # Two independent inputs are required for a race score: the observed distribution and a
@@ -18,16 +18,21 @@ from backend.app.services.equity.schemas import ComponentEvidence
 _COVERAGE_WITH_OBSERVED_BUT_NO_BENCHMARK = 0.5
 
 
-@dataclass(frozen=True)
-class RaceBenchmark:
-    """A reference race/ethnicity distribution plus where it came from.
+def _valid_distribution(distribution: dict[str, float] | None) -> bool:
+    return bool(
+        distribution
+        and all(math.isfinite(value) and value >= 0 for value in distribution.values())
+        and sum(distribution.values()) > 0
+    )
 
-    Not shipped with defaults -- the caller (Phase 5 data integration) must provide one
-    from a real, disclosed source.
-    """
 
-    distribution: dict[str, float]
-    source: str
+def _canonical_distribution(distribution: dict[str, float]) -> dict[str, float]:
+    result: dict[str, float] = {}
+    for category, value in distribution.items():
+        key = category.strip().upper()
+        if key:
+            result[key] = result.get(key, 0.0) + value
+    return result
 
 
 def _jensen_shannon_similarity(observed: dict[str, float], reference: dict[str, float]) -> float:
@@ -55,17 +60,17 @@ def _jensen_shannon_similarity(observed: dict[str, float], reference: dict[str, 
 
 def observed_race_component(trial: Trial, benchmark: RaceBenchmark | None) -> ComponentEvidence:
     distribution = trial.enrollment_race_distribution
-    if not distribution or sum(distribution.values()) <= 0:
+    if not _valid_distribution(distribution):
         return ComponentEvidence(
             score=None,
             evidence_coverage=0.0,
             evidence_type="insufficient_data",
             rationale="No reported participant race/ethnicity enrollment data is available for this trial.",
-            source="Reported participant enrollment (ClinicalTrials.gov baselineCharacteristicsModule)",
+            source=trial.enrollment_race_source or "Reported participant enrollment",
             missing_evidence=["Participant race/ethnicity enrollment not reported."],
         )
 
-    if not benchmark or not benchmark.distribution:
+    if not benchmark or not benchmark.is_valid() or not _valid_distribution(benchmark.distribution):
         return ComponentEvidence(
             score=None,
             evidence_coverage=_COVERAGE_WITH_OBSERVED_BUT_NO_BENCHMARK,
@@ -75,19 +80,26 @@ def observed_race_component(trial: Trial, benchmark: RaceBenchmark | None) -> Co
                 "distribution was supplied to compare it against. TrialUnity does not fabricate or "
                 "scrape population benchmarks -- a real, sourced benchmark must be supplied explicitly."
             ),
-            source="Reported participant enrollment (ClinicalTrials.gov baselineCharacteristicsModule)",
+            source=trial.enrollment_race_source or "Reported participant enrollment",
             missing_evidence=["No reference/benchmark race distribution provided."],
         )
 
-    similarity = _jensen_shannon_similarity(distribution, benchmark.distribution)
+    similarity = _jensen_shannon_similarity(
+        _canonical_distribution(distribution),
+        _canonical_distribution(benchmark.distribution),
+    )
     return ComponentEvidence(
         score=round(similarity * 100, 2),
         evidence_coverage=1.0,
         evidence_type="observed_distribution_comparison",
         rationale=(
             f"OBSERVED participant race/ethnicity distribution compared against benchmark "
-            f"'{benchmark.source}' using Jensen-Shannon similarity (1 - normalized JS divergence, base 2)."
+            f"'{benchmark.provenance()}' using Jensen-Shannon similarity "
+            "(1 - normalized JS divergence, base 2)."
         ),
-        source=benchmark.source,
+        source=(
+            f"{trial.enrollment_race_source or 'Reported participant enrollment'}; "
+            f"benchmark: {benchmark.provenance()}"
+        ),
         missing_evidence=[],
     )

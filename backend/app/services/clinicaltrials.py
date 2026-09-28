@@ -7,6 +7,7 @@ import httpx
 
 from backend.app.core.config import get_settings
 from backend.app.models.schemas import Trial, TrialSearchRequest
+from backend.app.services.demographics import BASELINE_RESULTS_SOURCE, parse_baseline_demographics
 from backend.app.services.text import normalize_space
 
 
@@ -82,6 +83,9 @@ class ClinicalTrialsClient:
         contacts = protocol.get("contactsLocationsModule", {})
         sponsor = protocol.get("sponsorCollaboratorsModule", {})
         arms = protocol.get("armsInterventionsModule", {})
+        results = study.get("resultsSection", {})
+        baseline = results.get("baselineCharacteristicsModule", {}) if isinstance(results, dict) else {}
+        sex_distribution, race_distribution = parse_baseline_demographics(baseline)
 
         nct_id = identification.get("nctId") or identification.get("NCTId") or "UNKNOWN"
         locations = []
@@ -112,4 +116,8 @@ class ClinicalTrialsClient:
             locations=locations,
             sponsor=(sponsor.get("leadSponsor") or {}).get("name"),
             source_url=f"https://clinicaltrials.gov/study/{nct_id}",
+            enrollment_sex_distribution=sex_distribution,
+            enrollment_race_distribution=race_distribution,
+            enrollment_sex_source=BASELINE_RESULTS_SOURCE if sex_distribution else None,
+            enrollment_race_source=BASELINE_RESULTS_SOURCE if race_distribution else None,
         )

@@ -4,6 +4,8 @@ These are never conflated: a trial open to "ALL" sexes at the protocol level say
 nothing about how enrollment actually turned out, and the response always labels
 which one it is returning.
 """
+import math
+
 from backend.app.models.schemas import Trial
 from backend.app.services.equity.schemas import ComponentEvidence
 
@@ -59,7 +61,9 @@ def prospective_sex_component(trial: Trial) -> ComponentEvidence:
 def observed_sex_component(trial: Trial, target_ratio: dict[str, float] | None = None) -> ComponentEvidence | None:
     """Reported enrollment balance, if the registry published results. None if not available."""
     distribution = trial.enrollment_sex_distribution
-    if not distribution or sum(distribution.values()) <= 0:
+    if not distribution or not all(
+        math.isfinite(value) and value >= 0 for value in distribution.values()
+    ) or sum(distribution.values()) <= 0:
         return None
 
     target = target_ratio or DEFAULT_TARGET_RATIO
@@ -75,6 +79,6 @@ def observed_sex_component(trial: Trial, target_ratio: dict[str, float] | None =
             f"of {target}. This baseline is generic and swappable; a disease-specific benchmark can "
             "replace it without changing this scoring path."
         ),
-        source="Reported participant enrollment (ClinicalTrials.gov baselineCharacteristicsModule)",
+        source=trial.enrollment_sex_source or "Reported participant enrollment",
         missing_evidence=[],
     )
