@@ -6,6 +6,7 @@ from backend.app.services.equity.service import compute_esr
 from backend.app.services.equity.benchmarks import (
     DEFAULT_RACE_BENCHMARK_PROVIDER, RaceBenchmarkProvider,
 )
+from backend.app.services.representation_risk.predictor import predict_representation_risk
 from backend.app.services.retrieval import WEIGHTS, HybridRetriever
 from backend.app.services.text import first_sentence
 
@@ -57,6 +58,9 @@ class RecommendationService:
                         location=patient.location,
                     ),
                 ),
+                # Never mixed into `score`, `esr`, or trial ordering -- see
+                # backend.app.services.representation_risk.predictor.
+                representation_risk=predict_representation_risk(trial),
             ))
         # Keep relevance unchanged; known structured conflicts form a separate final group.
         results.sort(key=lambda result: result.structured_eligibility.status == "incompatible")

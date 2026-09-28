@@ -124,6 +124,10 @@ After starting the app, interactive docs are available at `/docs`.
 
 `evaluation/` holds a small, reproducible benchmark proving whether hybrid retrieval actually outranks BM25-only and embeddings-only baselines, with honest results (including where hybrid doesn't win). Run it with `python -m evaluation.run`; see [evaluation/README.md](evaluation/README.md) for the benchmark, metrics, current results, and limitations.
 
+## Representation Risk (Experimental)
+
+`representation_risk/` is an **experimental, not validated** ML layer that predicts an under-representation risk band for recruiting trials that don't yet have observed enrollment demographics -- trained and evaluated entirely on synthetic fixture data, never mixed into relevance, eligibility, or ESR. Run it with `python -m representation_risk.run`; see [representation_risk/README.md](representation_risk/README.md) for the target definition, features, models, results, and limitations.
+
 ## Local Setup
 
 ### Run With Python

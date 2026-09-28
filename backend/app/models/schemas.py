@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from backend.app.services.equity.schemas import ESRResult
+from backend.app.services.representation_risk.schemas import RepresentationRiskPrediction
 
 
 class PatientProfile(BaseModel):
@@ -56,6 +57,10 @@ class Trial(BaseModel):
     enrollment_race_distribution: dict[str, float] | None = None
     enrollment_sex_source: str | None = None
     enrollment_race_source: str | None = None
+    # Planned enrollment size (designModule.enrollmentInfo.count), a pre-outcome design
+    # field. Not populated by current ingestion (see representation_risk/README.md);
+    # defaults to None so feature extraction has to treat it as legitimately unknown.
+    target_enrollment: int | None = None
 
 
 class MatchExplanation(BaseModel):
@@ -112,6 +117,12 @@ class TrialRecommendation(BaseModel):
         default=None,
         description="Equity/Access Representation score. Independent of `score` and "
         "`structured_eligibility`; never influences ranking or eligibility.",
+    )
+    representation_risk: RepresentationRiskPrediction | None = Field(
+        default=None,
+        description="EXPERIMENTAL predicted under-representation risk, returned only when observed "
+        "ESR demographic evidence is unavailable. Never a substitute for `esr`; never influences "
+        "ranking, eligibility, or `esr` itself.",
     )
 
 
