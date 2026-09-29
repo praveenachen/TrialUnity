@@ -10,3 +10,7 @@ node_modules/
 dist/
 build/
 .DS_Store
+
+# Xcode per-user state
+xcuserdata/
+*.xcuserstate
