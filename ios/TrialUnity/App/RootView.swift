@@ -2,13 +2,19 @@ import SwiftUI
 
 struct RootView: View {
     @State private var path: [AppRoute] = []
+    @State private var savedTrials = SavedTrialsStore()
     @State private var draft = PatientProfileDraft()
 
     var body: some View {
         NavigationStack(path: $path) {
             WelcomeView(onStart: { path.append(.profileStep(.condition)) })
+                .toolbar { NavigationLink("Saved", destination: SavedTrialsView()) }
                 .navigationDestination(for: AppRoute.self, destination: destination(for:))
         }
+        .environment(savedTrials)
+        .alert("Saved trials", isPresented: Binding(get: { savedTrials.message != nil }, set: { if !$0 { savedTrials.message = nil } })) {
+            Button("OK") { savedTrials.message = nil }
+        } message: { Text(savedTrials.message ?? "") }
         .tint(Theme.Color.accent)
     }
 

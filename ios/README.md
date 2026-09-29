@@ -109,3 +109,33 @@ build in Xcode as the first real check. What was verified in this environment:
   observed race enrollment data returns `esr` with a real component score and
   `representation_risk: null`, while a trial without it returns a `risk_level`
   prediction -- the ESR/prediction boundary holds on live data, not just fixtures.
+
+## Saved patient workflow
+
+Use **Save** in results or Trial Passport, then **Saved** from the welcome screen
+or results. Saves are local snapshots in Application Support at
+`TrialUnity/saved-trials-v1.json`, written atomically. Each NCT ID appears once.
+The snapshot retains the backend recommendation and original search profile needed
+by Passport/Match Trace; it does not retain the full search response or recalculate
+scores. Removing a saved trial deletes its snapshot. There is no account or sync.
+
+Snapshots show their saved date and may be stale. Incomplete records retain their
+identity when possible; unavailable details show Unknown/Not reported. Original
+search profiles can differ, so comparison warns about that rather than reranking.
+
+Select 2–3 saved trials for a stacked comparison, or 1–3 for an appointment brief.
+Enter optional context, preview the complete plain-text brief, then tap Share to
+open the native iOS share sheet. The payload contains original search conditions,
+backend explanations (which may include patient details), registry links, care-team
+questions, and the navigation-only disclaimer. Review it before choosing a recipient.
+
+Verification: Swift package tests cover disk reload/removal, duplicate prevention,
+selection limits, missing evidence, deterministic brief content and source links.
+To additionally exercise 2–3 real trial snapshots, set
+`TRIALUNITY_SAVED_LIVE_FIXTURE` to a JSON response captured from `/api/recommendations`
+when running `swift test --package-path ios`.
+
+Manual simulator/device check: save three results, stop and relaunch the app, open
+Saved, compare two then three, preview an appointment brief, and use Share → Copy
+(or another available share destination). Paste the result to confirm its source
+links and NCT IDs. Share destinations depend on the device's installed apps.

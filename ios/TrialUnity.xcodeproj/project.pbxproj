@@ -55,6 +55,8 @@
 		7EFE02DC24C44CFBA234B73C /* MatchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56194FE3CA7844A4840B43D6 /* MatchingView.swift */; };
 		FF2489BA2FB542569B1194B9 /* TrialPassportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D96E433D78B409093D8A41A /* TrialPassportView.swift */; };
 		FD30BF6AD2414C888C4B0BFD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F7F980E7B61446A09570DF89 /* Assets.xcassets */; };
+5C8A3A63200C4DA096DB26B3 = {isa = PBXBuildFile; fileRef = 447493C8740640E1B5EC0AC9; };
+C863C8090E1847A7BA459D71 = {isa = PBXBuildFile; fileRef = 8520DD2E4182423E889F9AAA; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -110,6 +112,8 @@
 		A01CB4D8DA7D4B0DB6951200 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		604DDA327E994670847AF749 /* Info-Debug.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-Debug.plist"; sourceTree = "<group>"; };
 		6F6251B37F54472DA6C71B81 /* TrialUnity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrialUnity.app; sourceTree = BUILT_PRODUCTS_DIR; };
+447493C8740640E1B5EC0AC9 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Models/SavedTrials.swift; sourceTree = SOURCE_ROOT; };
+8520DD2E4182423E889F9AAA = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Features/Saved/SavedTrialsView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +130,8 @@
 		63CA7149D99D47EBB2932D72 /* App */ = {
 			isa = PBXGroup;
 			children = (
+8520DD2E4182423E889F9AAA,
+447493C8740640E1B5EC0AC9,
 				671B2E97634E475AA673A30B /* AppRoute.swift */,
 				27D0A4568E834A7CAEFAA3EA /* RootView.swift */,
 				7F6FCEB140494729B9A512DD /* TrialUnityApp.swift */,
@@ -371,6 +377,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+C863C8090E1847A7BA459D71,
+5C8A3A63200C4DA096DB26B3,
 				3A9BEBAF9705441E9FBB495F /* AppRoute.swift in Sources */,
 				394FE1C7EC5542E2B8C6A005 /* RootView.swift in Sources */,
 				248095A6AA2042A2963A1E36 /* TrialUnityApp.swift in Sources */,

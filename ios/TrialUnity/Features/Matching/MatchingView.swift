@@ -24,6 +24,7 @@ struct MatchingView: View {
             }
         }
         .background(Theme.Color.paper)
+        .toolbar { NavigationLink("Saved", destination: SavedTrialsView()) }
         .navigationTitle("Matching trials")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: attempt) { await model.load() }
@@ -44,6 +45,8 @@ struct MatchingView: View {
                     } label: {
                         TrialResultRow(result: result)
                     }
+                    .swipeActions(edge: .leading) { SaveTrialButton(result: result, profile: model.profile, source: response.source) }
+                    SaveTrialButton(result: result, profile: model.profile, source: response.source)
                 }
             }
             #if DEBUG

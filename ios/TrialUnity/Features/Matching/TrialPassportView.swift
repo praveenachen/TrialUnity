@@ -31,6 +31,7 @@ struct TrialPassportView: View {
             .padding(Theme.Spacing.l)
         }
         .background(Theme.Color.paper)
+        .toolbar { SaveTrialButton(result: result, profile: profile, source: responseSource) }
         .navigationTitle("Trial Passport")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -227,6 +228,6 @@ struct TrialPassportView: View {
                 representation_risk: nil
             ),
             responseSource: "clinicaltrials.gov"
-        )
+        ).environment(SavedTrialsStore())
     }
 }
