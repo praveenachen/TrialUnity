@@ -96,5 +96,11 @@
       }
     }
   ],
-  "source": "sample-data"
+  "source": "sample-data",
+  "funnel": {
+    "candidate_trials": 3,
+    "recruiting_trials": 2,
+    "structured_eligible_trials": 1,
+    "ranked_matches": 1
+  }
 }

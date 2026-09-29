@@ -52,6 +52,7 @@ The retrieval pipeline is a hybrid of lexical and dense semantic search, combine
 - every recommendation returns normalized lexical, semantic, and structured relevance signals plus their weights and weighted contributions; the weighted sum is the overall relevance score, not an eligibility probability
 - structured age, sex, and recruitment checks are returned separately and never affect the relevance score; incompatible results rank after other results, and missing or unsupported data remains unknown
 - structured compatibility is not full medical eligibility; free-text criteria always require review
+- every `TrialSearchResponse` also includes a `funnel`: truthful candidate/recruiting/structured-eligible/ranked-matches counts for the client's retrieval-progress UI, computed by counting the same ranked results the response already returns (see `backend/app/services/funnel.py`) -- never estimated or invented, and never a second ranking pass
 
 This design can be upgraded to a vector database without changing the API contract if the trial catalog outgrows in-memory ranking.
 

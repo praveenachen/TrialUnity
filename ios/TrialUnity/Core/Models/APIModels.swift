@@ -10,6 +10,19 @@ struct PatientProfile: Codable {
     let phase_preferences: [String]
     let notes: String?
 
+    init(
+        age: Int?, sex: String?, condition: String, location: String?,
+        intervention_preferences: [String], phase_preferences: [String], notes: String?
+    ) {
+        self.age = age
+        self.sex = sex
+        self.condition = condition
+        self.location = location
+        self.intervention_preferences = intervention_preferences
+        self.phase_preferences = phase_preferences
+        self.notes = notes
+    }
+
     init(draft: PatientProfileDraft) {
         func optional(_ text: String) -> String? {
             let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -31,6 +44,15 @@ struct TrialSearchResponse: Codable {
     let total: Int
     let results: [TrialRecommendation]
     let source: String
+    let funnel: MatchingFunnel
+}
+
+/// Truthful retrieval-stage counts from the backend. Never estimated client-side.
+struct MatchingFunnel: Codable, Equatable {
+    let candidate_trials: Int
+    let recruiting_trials: Int
+    let structured_eligible_trials: Int
+    let ranked_matches: Int
 }
 
 struct Trial: Codable {

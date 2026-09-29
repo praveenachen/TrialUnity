@@ -55,9 +55,57 @@ experimental representation risk are independent types and are never recalculate
 by the app. Debug screens show API URL, response source, ESR evidence mode and
 component sources, and risk evidence type/model version.
 
+## Results experience and Trial Passport
+
+`MatchingView` shows a real retrieval-funnel summary (`MatchingFunnelSummaryView`,
+backed by the backend's `funnel` field -- real counts, never invented) above a
+shortlist of `TrialResultRow`s. While a request is in flight, `MatchingFunnelLoadingView`
+shows the four conceptual stages with no counts and no fake ticking progress --
+the backend computes a search in one request, so there is no honest per-stage
+signal to animate before the response arrives.
+
+Tapping a result pushes `TrialPassportView`, a full-screen (not modal) passport
+with: trial identity, **Your Match** (a reusable `MatchTraceView` built by
+`MatchTraceBuilder` from the six structured signals -- Condition/Age/Sex/Treatment/
+Location/Phase -- each row expandable to its patient value, trial value, and
+source note), trial overview, eligibility evidence (age/sex bounds, full criteria
+text, "needs confirmation" items), **Representation & Access** (`ESRScoreView`:
+overall score, an `CoverageBar` for evidence coverage, and a socioeconomic/sex/race
+breakdown where a missing component always renders as "—", never 0), a visually
+distinct **Predicted Representation Risk** section (`RepresentationRiskView`,
+dashed border, "EXPERIMENTAL · PREDICTED · NOT OBSERVED EVIDENCE" label, only
+shown when the backend actually returns a prediction -- i.e. never alongside
+observed ESR race evidence), and source/provenance links.
+
+`RelevanceTier`, `EligibilitySummary`, `ESREvidenceType`, `ESRDisplay`, and
+`MatchTraceBuilder` (all in `Core/Models/`) are pure, SPM-testable presentation
+logic -- they only label and group fields the backend already computed; none of
+them recalculates a score.
+
 ## Verification on this workspace
 
-Debug simulator and Release device builds passed. All five Swift XCTest tests passed,
-including a real URLSession POST to FastAPI returning 10 recommendations with
-`source: clinicaltrials.gov`. The generated Debug plist contains only the local-network
-ATS exception; the generated Release plist contains no ATS exceptions.
+Xcode.app is not installed in this session's environment (Command Line Tools
+only), so a real `xcodebuild`/simulator run could not be performed here -- please
+build in Xcode as the first real check. What was verified in this environment:
+
+- `swiftc -typecheck` across all 44 app Swift files (macOS target, with only the
+  three genuinely iOS-only calls -- `navigationBarTitleDisplayMode`,
+  `keyboardType` -- elided): clean, no errors.
+- `project.pbxproj` was regenerated to include five files a prior patch had
+  wired in non-standard, ungrouped `SOURCE_ROOT`-relative entries (`APIClient`,
+  `APIConfiguration`, `APIError`, `APIModels`, `MatchingModel`) plus every new
+  file from this phase; validated with `plutil -lint`, converted to XML with no
+  dangling object references, and cross-checked so all 46 Swift files on disk
+  match 1:1 with the project's file list and Sources build phase. The scheme's
+  `BlueprintIdentifier` was updated to match the regenerated target.
+- `swift test` -- **16 of 16 tests pass** (11 new presentation-logic tests plus
+  the 5 pre-existing networking/DTO/state tests).
+- `TRIALUNITY_RUN_E2E=1 swift test --filter testLocalEndToEnd` against a real
+  locally running FastAPI backend: passed, a genuine `URLSession` round trip
+  that hit live ClinicalTrials.gov (`source=clinicaltrials.gov`, not the
+  sample-data fallback) and decoded 10 real recommendations through the exact
+  DTOs the UI consumes, including the new non-optional `funnel` field. A
+  follow-up `curl` against the same running backend confirmed a trial with
+  observed race enrollment data returns `esr` with a real component score and
+  `representation_risk: null`, while a trial without it returns a `risk_level`
+  prediction -- the ESR/prediction boundary holds on live data, not just fixtures.

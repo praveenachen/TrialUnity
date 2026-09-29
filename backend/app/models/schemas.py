@@ -126,11 +126,30 @@ class TrialRecommendation(BaseModel):
     )
 
 
+class MatchingFunnel(BaseModel):
+    """Truthful stage counts from one search, for the client's retrieval-funnel UI.
+
+    Every count comes directly from candidates actually fetched/evaluated for this
+    request -- nothing here is estimated or fabricated. `structured_eligible_trials`
+    counts trials whose structured eligibility is not `incompatible` (i.e.
+    `compatible` or `unknown`), matching the "needs review" framing used elsewhere;
+    it is evaluated over the full candidate set before truncating to `ranked_matches`.
+    """
+
+    candidate_trials: int = Field(ge=0, description="Trials fetched for this search, before any filtering.")
+    recruiting_trials: int = Field(ge=0, description="Of the candidates, how many have status RECRUITING.")
+    structured_eligible_trials: int = Field(
+        ge=0, description="Of the candidates, how many are not structurally incompatible."
+    )
+    ranked_matches: int = Field(ge=0, description="How many results were actually returned (post-limit).")
+
+
 class TrialSearchResponse(BaseModel):
     query: str
     total: int
     results: list[TrialRecommendation]
     source: str
+    funnel: MatchingFunnel
 
 
 class TrialDetailResponse(BaseModel):

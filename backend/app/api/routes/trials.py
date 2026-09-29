@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from backend.app.models.schemas import PatientProfile, TrialDetailResponse, TrialSearchRequest, TrialSearchResponse
 from backend.app.services.clinicaltrials import ClinicalTrialsClient
+from backend.app.services.funnel import build_funnel
 from backend.app.services.recommendations import RecommendationService
 
 router = APIRouter(prefix="/trials", tags=["trials"])
@@ -18,8 +19,11 @@ async def search_trials(request: TrialSearchRequest) -> TrialSearchResponse:
         phase_preferences=[request.phase] if request.phase else [],
         notes=request.query,
     )
-    ranked = recommendations.recommend(profile, trials, limit=request.page_size)
-    return TrialSearchResponse(query=request.query, total=len(ranked), results=ranked, source=source)
+    # See recommendations.py for why this ranks the full set before truncating.
+    ranked = recommendations.recommend(profile, trials, limit=len(trials))
+    results = ranked[:request.page_size]
+    funnel = build_funnel(trials, ranked, len(results))
+    return TrialSearchResponse(query=request.query, total=len(results), results=results, source=source, funnel=funnel)
 
 
 @router.get("/{nct_id}", response_model=TrialDetailResponse)

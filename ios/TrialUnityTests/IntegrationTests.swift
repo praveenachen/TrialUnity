@@ -109,7 +109,8 @@ final class IntegrationTests: XCTestCase {
         guard case .idle = failing.state else { return XCTFail() }
         await failing.load()
         guard case .failed = failing.state else { return XCTFail() }
-        let empty = MatchingModel(profile: PatientProfile(draft: .sample), client: ImmediateClient(result: .success(TrialSearchResponse(query: "cancer", total: 0, results: [], source: "sample-data"))))
+        let emptyFunnel = MatchingFunnel(candidate_trials: 0, recruiting_trials: 0, structured_eligible_trials: 0, ranked_matches: 0)
+        let empty = MatchingModel(profile: PatientProfile(draft: .sample), client: ImmediateClient(result: .success(TrialSearchResponse(query: "cancer", total: 0, results: [], source: "sample-data", funnel: emptyFunnel))))
         await empty.load()
         guard case .empty = empty.state else { return XCTFail() }
         let cancelled = MatchingModel(profile: PatientProfile(draft: .sample), client: ImmediateClient(result: .failure(CancellationError())))

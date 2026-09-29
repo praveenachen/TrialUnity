@@ -8,8 +8,8 @@ final class MatchingModel {
     }
     private(set) var state: State = .idle
     private(set) var source: String?
+    let profile: PatientProfile
     private let client: any RecommendationsProviding
-    private let profile: PatientProfile
 
     init(profile: PatientProfile, client: any RecommendationsProviding = APIClient()) {
         self.profile = profile

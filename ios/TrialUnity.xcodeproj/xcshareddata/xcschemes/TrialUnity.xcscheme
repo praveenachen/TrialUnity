@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CB1461E3357E42F39229CD70"
+               BlueprintIdentifier = "B4B6D23179FC4EBDA53E88D9"
                BuildableName = "TrialUnity.app"
                BlueprintName = "TrialUnity"
                ReferencedContainer = "container:TrialUnity.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CB1461E3357E42F39229CD70"
+            BlueprintIdentifier = "B4B6D23179FC4EBDA53E88D9"
             BuildableName = "TrialUnity.app"
             BlueprintName = "TrialUnity"
             ReferencedContainer = "container:TrialUnity.xcodeproj">
@@ -61,7 +61,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CB1461E3357E42F39229CD70"
+            BlueprintIdentifier = "B4B6D23179FC4EBDA53E88D9"
             BuildableName = "TrialUnity.app"
             BlueprintName = "TrialUnity"
             ReferencedContainer = "container:TrialUnity.xcodeproj">
