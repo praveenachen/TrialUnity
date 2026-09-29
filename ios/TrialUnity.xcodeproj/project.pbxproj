@@ -33,8 +33,13 @@
 		0D8234DA59A3483089E95D0B /* SexStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2441B22E229408BB146B0E9 /* SexStepView.swift */; };
 		B32B816D16C74CE485E49DFB /* TravelStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D080193ADB45B7962D0BA1 /* TravelStepView.swift */; };
 		2936D9F21A144FDBAE133BC9 /* TreatmentStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33816CBD7F034865976920FB /* TreatmentStepView.swift */; };
-		A12CA2D0BB724F46AAE3D588 /* MatchingPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35681FD1547A41E08590C725 /* MatchingPlaceholderView.swift */; };
+		A12CA2D0BB724F46AAE3D588 /* MatchingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35681FD1547A41E08590C725 /* MatchingView.swift */; };
 		3A371B24835443D69C588DA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F209961E7DF4664BAC6B7B5 /* Assets.xcassets */; };
+B3D03E9A504A4798B9AEE813 = {isa = PBXBuildFile; fileRef = 1AE80309B5E646968A94F1B8; };
+18E46607FC9E4B92B8862CF0 = {isa = PBXBuildFile; fileRef = E26C3008CA3248F7AAF99CC3; };
+A930220C336B4BABAE229C73 = {isa = PBXBuildFile; fileRef = AA9B9170C851400BA23B5820; };
+08CB43FB7EBD44E59054942D = {isa = PBXBuildFile; fileRef = 176A0B41B4C0487190C37E3B; };
+F5E63EFE836346CD86D3976D = {isa = PBXBuildFile; fileRef = 7261DD482E254BC893948FE0; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,11 +69,16 @@
 		B2441B22E229408BB146B0E9 /* SexStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SexStepView.swift; sourceTree = "<group>"; };
 		C3D080193ADB45B7962D0BA1 /* TravelStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelStepView.swift; sourceTree = "<group>"; };
 		33816CBD7F034865976920FB /* TreatmentStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreatmentStepView.swift; sourceTree = "<group>"; };
-		35681FD1547A41E08590C725 /* MatchingPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingPlaceholderView.swift; sourceTree = "<group>"; };
+		35681FD1547A41E08590C725 /* MatchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingView.swift; sourceTree = "<group>"; };
 		6F209961E7DF4664BAC6B7B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		468F02B19C85402F8B2F9310 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		DF7E47C3567747239F90BB1C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		7F92E28C1C9A4B99B23E8E38 /* TrialUnity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrialUnity.app; sourceTree = BUILT_PRODUCTS_DIR; };
+1AE80309B5E646968A94F1B8 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Models/APIModels.swift; sourceTree = SOURCE_ROOT; };
+E26C3008CA3248F7AAF99CC3 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Networking/APIClient.swift; sourceTree = SOURCE_ROOT; };
+AA9B9170C851400BA23B5820 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Networking/APIConfiguration.swift; sourceTree = SOURCE_ROOT; };
+176A0B41B4C0487190C37E3B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Networking/APIError.swift; sourceTree = SOURCE_ROOT; };
+7261DD482E254BC893948FE0 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Features/Matching/MatchingModel.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +105,11 @@
 		5FC03531502C4756ACA762DF /* Models */ = {
 			isa = PBXGroup;
 			children = (
+7261DD482E254BC893948FE0,
+176A0B41B4C0487190C37E3B,
+AA9B9170C851400BA23B5820,
+E26C3008CA3248F7AAF99CC3,
+1AE80309B5E646968A94F1B8,
 				0AC03A8E35FD418FA78BA4E0 /* PatientProfileDraft.swift */,
 				F883CE5AC2084745817D0810 /* ProfileOptions.swift */,
 			);
@@ -171,7 +186,7 @@
 		F414CD7167BC453F819CB243 /* Matching */ = {
 			isa = PBXGroup;
 			children = (
-				35681FD1547A41E08590C725 /* MatchingPlaceholderView.swift */,
+				35681FD1547A41E08590C725 /* MatchingView.swift */,
 			);
 			path = Matching;
 			sourceTree = "<group>";
@@ -301,6 +316,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+F5E63EFE836346CD86D3976D,
+08CB43FB7EBD44E59054942D,
+A930220C336B4BABAE229C73,
+18E46607FC9E4B92B8862CF0,
+B3D03E9A504A4798B9AEE813,
 				EC03B25C8D6A465EB1AD9FB6 /* AppRoute.swift in Sources */,
 				2C0412BD0E1147C2BC74657B /* RootView.swift in Sources */,
 				537FF75A90064972A036102C /* TrialUnityApp.swift in Sources */,
@@ -327,7 +347,7 @@
 				0D8234DA59A3483089E95D0B /* SexStepView.swift in Sources */,
 				B32B816D16C74CE485E49DFB /* TravelStepView.swift in Sources */,
 				2936D9F21A144FDBAE133BC9 /* TreatmentStepView.swift in Sources */,
-				A12CA2D0BB724F46AAE3D588 /* MatchingPlaceholderView.swift in Sources */,
+				A12CA2D0BB724F46AAE3D588 /* MatchingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -462,6 +482,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = TrialUnity;
+				INFOPLIST_FILE = TrialUnity/Resources/Info-Debug.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

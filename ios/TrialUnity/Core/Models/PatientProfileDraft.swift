@@ -1,12 +1,7 @@
 import Foundation
 import Observation
 
-/// In-memory draft of the patient profile being built by the onboarding wizard.
-///
-/// This is intentionally the *only* piece of shared state in the app right now --
-/// no persistence, no networking, no backend calls. It mirrors the shape of the
-/// backend's `PatientProfile` model closely enough that wiring up the real API
-/// later should mean writing a mapper, not redesigning this type.
+/// In-memory profile draft. Travel preferences remain local to the app.
 @Observable
 final class PatientProfileDraft {
     var condition: String = ""
@@ -27,7 +22,7 @@ final class PatientProfileDraft {
     }
 
     var isConditionValid: Bool {
-        !condition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        condition.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
     }
 
     var isAgeValid: Bool { age != nil }

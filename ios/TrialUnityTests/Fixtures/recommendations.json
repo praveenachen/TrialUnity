@@ -1,0 +1,100 @@
+{
+  "query": "cancer",
+  "total": 1,
+  "results": [
+    {
+      "trial": {
+        "nct_id": "NCT00000001",
+        "title": "Contract fixture trial",
+        "status": "RECRUITING",
+        "conditions": [],
+        "interventions": [],
+        "phases": [],
+        "brief_summary": null,
+        "eligibility_criteria": null,
+        "sex": null,
+        "minimum_age": null,
+        "maximum_age": null,
+        "locations": [
+          "Toronto, Canada"
+        ],
+        "sponsor": null,
+        "source_url": null,
+        "enrollment_sex_distribution": null,
+        "enrollment_race_distribution": null,
+        "enrollment_sex_source": null,
+        "enrollment_race_source": null,
+        "target_enrollment": null
+      },
+      "score": 0.6,
+      "score_breakdown": {
+        "lexical": 0.6
+      },
+      "relevance": {
+        "overall": 0.6,
+        "lexical": 1.0,
+        "semantic": 0.0,
+        "structured": {},
+        "weighted_components": {
+          "lexical": 0.6
+        },
+        "weights": {
+          "lexical": 0.6
+        }
+      },
+      "explanation": {
+        "matched_terms": [],
+        "eligibility_notes": [],
+        "ranking_rationale": "Contract fixture",
+        "patient_friendly_summary": "Contract fixture",
+        "relevant_signals": [],
+        "manual_review_signals": []
+      },
+      "structured_eligibility": {
+        "status": "unknown",
+        "criteria": {
+          "sex": {
+            "state": "unknown",
+            "reason": "Not provided"
+          }
+        }
+      },
+      "esr": {
+        "score": null,
+        "mode": "insufficient_data",
+        "evidence_coverage": 0.0,
+        "components": {
+          "race": {
+            "score": null,
+            "evidence_coverage": 0.0,
+            "evidence_type": "insufficient_data",
+            "rationale": "No distribution",
+            "source": null,
+            "missing_evidence": [
+              "Enrollment race distribution"
+            ]
+          }
+        },
+        "weights_used": {}
+      },
+      "representation_risk": {
+        "risk_level": "moderate",
+        "probabilities": {
+          "low": 0.2,
+          "moderate": 0.6,
+          "high": 0.2
+        },
+        "confidence": 0.6,
+        "model_version": "fixture-v1",
+        "evidence_type": "predicted",
+        "drivers": [
+          "site_count"
+        ],
+        "limitations": [
+          "Synthetic fixture"
+        ]
+      }
+    }
+  ],
+  "source": "sample-data"
+}

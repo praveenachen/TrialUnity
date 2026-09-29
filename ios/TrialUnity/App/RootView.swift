@@ -1,9 +1,5 @@
 import SwiftUI
 
-/// The app's entire navigation graph lives here, in one `NavigationStack` driven
-/// by a typed path. There is exactly one shared piece of state (`draft`); every
-/// screen either reads it, mutates it directly (it's `@Observable`), or is
-/// stateless. No backend calls happen anywhere in this phase.
 struct RootView: View {
     @State private var path: [AppRoute] = []
     @State private var draft = PatientProfileDraft()
@@ -30,7 +26,7 @@ struct RootView: View {
                 onContinue: { path.append(.matching) }
             )
         case .matching:
-            MatchingPlaceholderView()
+            MatchingView(profile: PatientProfile(draft: draft))
         }
     }
 
