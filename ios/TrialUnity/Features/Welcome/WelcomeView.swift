@@ -319,10 +319,17 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text("YOUR TRIAL JOURNEY").font(.caption.weight(.semibold)).foregroundStyle(Theme.Color.muted)
-                    HStack(alignment: .top, spacing: 8) {
-                        journeyValue(count.map(String.init) ?? "—", label: "Matches", tint: Theme.Color.accent)
-                        journeyValue(String(saved.trials.count), label: "Saved", tint: Theme.Color.evidence)
-                        journeyValue(String(activity?.briefIDs.count ?? 0), label: "Briefs", tint: .purple)
+                    HStack(alignment: .center, spacing: 4) {
+                        journeyTile(value: count.map(String.init) ?? "—", label: "Matches", symbol: "magnifyingglass", tint: Theme.Color.accent)
+                        journeyConnector
+                        journeyTile(value: String(saved.trials.count), label: "Saved", symbol: "bookmark.fill", tint: Theme.Color.evidence)
+                        journeyConnector
+                        let briefs = activity?.briefIDs.count ?? 0
+                        Button(action: openSaved) {
+                            journeyTile(value: briefs > 0 ? String(briefs) : "Prepare",
+                                        label: briefs > 0 ? "Briefs" : "Start brief →",
+                                        symbol: "doc.text", tint: Theme.Color.violet, compactValue: briefs == 0)
+                        }.buttonStyle(.plain)
                     }
                 }
                 .padding(Theme.Metrics.cardPadding)
@@ -355,6 +362,9 @@ struct HomeView: View {
                     }
                 }
 
+                if !saved.trials.isEmpty {
+                    ShortlistCard(trials: saved.trials, openSaved: openSaved)
+                } else {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Saved trials").font(.title3.bold())
@@ -397,6 +407,8 @@ struct HomeView: View {
                     .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
                     .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card).stroke(Theme.Color.accent.opacity(0.2), lineWidth: 1))
                 }
+                }
+                // Future: a "Trials near you" MapKit preview can be inserted here.
             }.padding(Theme.Metrics.screenPadding)
         }
         .foregroundStyle(Theme.Color.ink)
@@ -431,19 +443,85 @@ struct HomeView: View {
         }
     }
 
-    private func journeyValue(_ value: String, label: String, tint: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(value).font(.title2.bold()).monospacedDigit().foregroundStyle(tint)
-            Text(label).font(.caption).foregroundStyle(Theme.Color.muted)
+    private func journeyTile(value: String, label: String, symbol: String, tint: Color, compactValue: Bool = false) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: symbol).font(.caption.weight(.bold)).foregroundStyle(tint)
+            Text(value).font(compactValue ? .subheadline.bold() : .title2.bold()).monospacedDigit()
+                .foregroundStyle(tint).lineLimit(1).minimumScaleFactor(0.8)
+                .frame(minHeight: 28)
+            Text(label).font(.caption).foregroundStyle(Theme.Color.muted).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+    }
+
+    private var journeyConnector: some View {
+        Image(systemName: "chevron.right").font(.caption2.weight(.bold))
+            .foregroundStyle(Theme.Color.muted.opacity(0.5)).accessibilityHidden(true)
+    }
+}
+
+/// A compact snapshot of the saved shortlist, from real saved-trial snapshots only.
+/// Metrics that can't be known reliably are omitted rather than estimated.
+private struct ShortlistCard: View {
+    let trials: [SavedTrial]
+    let openSaved: () -> Void
+
+    private var strong: Int { trials.filter { $0.recommendation.map { RelevanceTier(score: $0.score) == .strong } ?? false }.count }
+    private var needsReview: Int {
+        trials.filter { $0.recommendation.map { EligibilitySummary(status: $0.structured_eligibility?.status) != .compatible } ?? false }.count
+    }
+    /// Only when the search profile had a location and a listed site text-matches it.
+    private var nearby: Int? {
+        let withLocation = trials.filter { $0.recommendation != nil && !($0.profile?.location ?? "").isEmpty }
+        guard !withLocation.isEmpty else { return nil }
+        return withLocation.filter { record in
+            guard let loc = record.profile?.location, let trial = record.recommendation?.trial else { return false }
+            return trial.locations.contains { $0.localizedCaseInsensitiveContains(loc) }
+        }.count
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("YOUR SHORTLIST").font(.caption.weight(.semibold)).foregroundStyle(Theme.Color.muted)
+            Text(trials.count == 1 ? "1 saved trial" : "\(trials.count) saved trials").font(.title3.bold())
+            HStack(alignment: .top, spacing: 8) {
+                metric(strong, "Strong\nmatches", "checkmark.circle.fill", Theme.Color.accent)
+                metric(needsReview, "Review\nneeded", "questionmark.circle.fill", Theme.Color.attention)
+                if let nearby { metric(nearby, "Nearby\nsite", "mappin.circle.fill", Theme.Color.evidence) }
+            }
+            Button(action: openSaved) {
+                HStack {
+                    Text("View saved trials")
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                }
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.Color.accent).frame(minHeight: 44)
+            }
+        }
+        .padding(Theme.Metrics.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .accessibilityElement(children: .contain)
+    }
+
+    private func metric(_ value: Int, _ label: String, _ symbol: String, _ tint: Color) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: symbol).foregroundStyle(tint).accessibilityHidden(true)
+            Text("\(value)").font(.title2.bold()).monospacedDigit().foregroundStyle(tint)
+            Text(label).font(.caption).foregroundStyle(Theme.Color.muted).multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
     }
 }
 
 private struct RecentActivityRow: View {
+    @Environment(SavedTrialsStore.self) private var saved
     let record: SavedTrial
     let onOpen: () -> Void
 
@@ -453,13 +531,20 @@ private struct RecentActivityRow: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: Theme.Spacing.xs) {
-                            Text(record.id).font(.provenance).foregroundStyle(Theme.Color.muted)
-                            Text("·").font(.caption).foregroundStyle(Theme.Color.muted)
                             TrialStatusText(status: result.trial.status)
+                            Text("·").font(.caption).foregroundStyle(Theme.Color.muted)
+                            Text(record.id).font(.provenance).foregroundStyle(Theme.Color.muted)
+                            if saved.contains(record.id) {
+                                Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.Color.accent)
+                                    .accessibilityLabel("Saved")
+                            }
+                            if EligibilitySummary(status: result.structured_eligibility?.status) == .unknown {
+                                Text("Needs review").font(.caption2.weight(.semibold)).foregroundStyle(Theme.Color.attention)
+                            }
                         }
                         Text(record.displayTitle).font(.subheadline.weight(.semibold)).lineLimit(2)
-                        Text(PatientPresentation.location(result.trial, near: profile.location) ?? record.id)
-                            .font(.caption).foregroundStyle(Theme.Color.muted).lineLimit(2)
+                        Label(PatientPresentation.location(result.trial, near: profile.location) ?? record.id, systemImage: "mappin.and.ellipse")
+                            .font(.caption).foregroundStyle(Theme.Color.muted).lineLimit(1)
                     }
                     Spacer(minLength: 0)
                     CardNavigationArrow()

@@ -40,6 +40,8 @@ enum Theme {
         /// prediction -- a neutral slate so it never reads as equal in
         /// authority to the observed-evidence ESR module.
         static let experimental = SwiftUI.Color("ExperimentalColor")
+        /// Appointment-prep accent (Home journey tile only).
+        static let violet = SwiftUI.Color(red: 124/255, green: 92/255, blue: 214/255)
     }
 
     enum Spacing {
