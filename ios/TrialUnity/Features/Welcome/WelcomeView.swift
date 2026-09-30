@@ -3,36 +3,30 @@ import CryptoKit
 
 struct WelcomeView: View {
     let onStart: () -> Void
-    private let blue = Color(red: 37/255, green: 99/255, blue: 235/255)
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
-            VStack(spacing: 28) {
+            VStack(spacing: 24) {
                 AnimatedCareLogo()
-                Text("TrialUnity").font(.title.bold())
+                Text("TrialUnity").font(.title.bold()).foregroundStyle(Color(red: 37/255, green: 68/255, blue: 154/255))
             }
             .frame(maxWidth: .infinity)
             Spacer()
-            Button("Continue", action: onStart)
-                .font(.headline).frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
-                .foregroundStyle(blue)
-                .background(.white, in: RoundedRectangle(cornerRadius: Theme.Radius.control))
+            PrimaryButton(title: "Continue", action: onStart)
                 .padding(.bottom, 24)
         }
-        .padding(Theme.Metrics.screenPadding).foregroundStyle(.white)
+        .padding(Theme.Metrics.screenPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(blue.ignoresSafeArea())
+        .background(Color.white.ignoresSafeArea())
     }
 }
 
-/// A hand cradling a heart, inside a white disc. On launch a ring draws itself
-/// once around the mark, then the crescent, hand and heart settle in. No looping;
+/// The hand-and-heart mark on white, like the original logo. On launch the
+/// crescent sweeps around once, the hand rises and the heart pops in. No looping;
 /// shown fully drawn under Reduce Motion.
 private struct AnimatedCareLogo: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var ring: CGFloat = 0
-    @State private var disc = false
-    @State private var crescent = false
+    @State private var sweep: CGFloat = 0
     @State private var hand = false
     @State private var heart = false
 
@@ -42,45 +36,37 @@ private struct AnimatedCareLogo: View {
 
     var body: some View {
         ZStack {
-            Circle().stroke(.white.opacity(0.18), lineWidth: 3).frame(width: 196, height: 196)
-            Circle().trim(from: 0, to: ring)
-                .stroke(.white, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .frame(width: 196, height: 196)
-                .rotationEffect(.degrees(-90))
-
-            Circle().fill(.white).frame(width: 164, height: 164)
-                .scaleEffect(disc ? 1 : 0.85).opacity(disc ? 1 : 0)
-
-            ZStack {
-                CrescentShape().fill(light)
-                    .rotationEffect(.degrees(crescent ? 0 : -40), anchor: .center)
-                    .opacity(crescent ? 1 : 0)
-                Group {
-                    HandShape().fill(dark)
-                    FingerShape().fill(dark)
+            CrescentShape().fill(light)
+                .mask {
+                    // A thick arc that grows clockwise from the crescent's lower tip.
+                    Circle().trim(from: 0, to: sweep * 0.7)
+                        .stroke(lineWidth: 100)
+                        .frame(width: 60, height: 60)
+                        .rotationEffect(.degrees(105))
                 }
-                .offset(y: hand ? 0 : 14).opacity(hand ? 1 : 0)
-                ZStack {
-                    HeartShape().fill(dark).frame(width: 40, height: 38).offset(y: 2)
-                    HeartShape().fill(soft).frame(width: 27, height: 25).offset(y: 4)
-                }
-                .scaleEffect(heart ? 1 : 0.2).opacity(heart ? 1 : 0)
+            Group {
+                HandShape().fill(dark)
+                FingerShape().fill(dark)
             }
-            .frame(width: 100, height: 100)
-            .scaleEffect(1.15)
+            .offset(y: hand ? 0 : 12).opacity(hand ? 1 : 0)
+            ZStack {
+                HeartShape().fill(dark).frame(width: 40, height: 38).offset(y: 2)
+                HeartShape().fill(soft).frame(width: 27, height: 25).offset(y: 4)
+            }
+            .scaleEffect(heart ? 1 : 0.2).opacity(heart ? 1 : 0)
         }
-        .frame(width: 200, height: 200)
+        .frame(width: 100, height: 100)
+        .scaleEffect(2.3)
+        .frame(width: 230, height: 230)
         .onAppear(perform: play)
         .accessibilityHidden(true)
     }
 
     private func play() {
-        guard !reduceMotion else { ring = 1; disc = true; crescent = true; hand = true; heart = true; return }
-        withAnimation(.easeInOut(duration: 1.3)) { ring = 1 }
-        withAnimation(.easeOut(duration: 0.5).delay(0.6)) { disc = true }
-        withAnimation(.easeOut(duration: 0.7).delay(0.9)) { crescent = true }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(1.1)) { hand = true }
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.55).delay(1.5)) { heart = true }
+        guard !reduceMotion else { sweep = 1; hand = true; heart = true; return }
+        withAnimation(.easeInOut(duration: 1.2).delay(0.2)) { sweep = 1 }
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.6)) { hand = true }
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.55).delay(1.3)) { heart = true }
     }
 }
 
@@ -107,8 +93,8 @@ struct HandShape: Shape {
     func path(in rect: CGRect) -> Path {
         scaled(rect) { p in
             p.move(to: CGPoint(x: 3, y: 58))
-            p.addCurve(to: CGPoint(x: 70, y: 98), control1: CGPoint(x: 8, y: 90), control2: CGPoint(x: 45, y: 106))
-            p.addCurve(to: CGPoint(x: 92, y: 40), control1: CGPoint(x: 90, y: 88), control2: CGPoint(x: 98, y: 62))
+            p.addCurve(to: CGPoint(x: 70, y: 98), control1: CGPoint(x: 8, y: 88), control2: CGPoint(x: 45, y: 102))
+            p.addCurve(to: CGPoint(x: 92, y: 40), control1: CGPoint(x: 87, y: 95), control2: CGPoint(x: 98, y: 66))
             p.addCurve(to: CGPoint(x: 78, y: 4), control1: CGPoint(x: 88, y: 24), control2: CGPoint(x: 86, y: 8))
             p.addCurve(to: CGPoint(x: 84, y: 40), control1: CGPoint(x: 76, y: 14), control2: CGPoint(x: 86, y: 28))
             p.addCurve(to: CGPoint(x: 72, y: 70), control1: CGPoint(x: 84, y: 54), control2: CGPoint(x: 80, y: 64))
@@ -326,9 +312,9 @@ struct HomeView: View {
                         journeyConnector
                         let briefs = activity?.briefIDs.count ?? 0
                         Button(action: openSaved) {
-                            journeyTile(value: briefs > 0 ? String(briefs) : "Prepare",
-                                        label: briefs > 0 ? "Briefs" : "Start brief →",
-                                        symbol: "doc.text", tint: Theme.Color.violet, compactValue: briefs == 0)
+                            journeyTile(value: briefs > 0 ? String(briefs) : "",
+                                        label: briefs > 0 ? (briefs == 1 ? "Brief" : "Briefs") : "Start brief →",
+                                        symbol: "doc.text", tint: Theme.Color.violet)
                         }.buttonStyle(.plain)
                     }
                 }
@@ -362,9 +348,6 @@ struct HomeView: View {
                     }
                 }
 
-                if !saved.trials.isEmpty {
-                    ShortlistCard(trials: saved.trials, openSaved: openSaved)
-                } else {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Saved trials").font(.title3.bold())
@@ -407,7 +390,6 @@ struct HomeView: View {
                     .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
                     .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card).stroke(Theme.Color.accent.opacity(0.2), lineWidth: 1))
                 }
-                }
                 // Future: a "Trials near you" MapKit preview can be inserted here.
             }.padding(Theme.Metrics.screenPadding)
         }
@@ -443,16 +425,16 @@ struct HomeView: View {
         }
     }
 
-    private func journeyTile(value: String, label: String, symbol: String, tint: Color, compactValue: Bool = false) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: symbol).font(.caption.weight(.bold)).foregroundStyle(tint)
-            Text(value).font(compactValue ? .subheadline.bold() : .title2.bold()).monospacedDigit()
-                .foregroundStyle(tint).lineLimit(1).minimumScaleFactor(0.8)
-                .frame(minHeight: 28)
-            Text(label).font(.caption).foregroundStyle(Theme.Color.muted).lineLimit(1).minimumScaleFactor(0.8)
+    private func journeyTile(value: String, label: String, symbol: String, tint: Color) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: symbol).font(.title2.weight(.semibold)).foregroundStyle(tint)
+                .frame(minHeight: 30)
+            Text(value.isEmpty ? label : "\(value) \(label)")
+                .font(.footnote.weight(.semibold)).foregroundStyle(tint)
+                .lineLimit(1).minimumScaleFactor(0.75)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, minHeight: 80)
+        .padding(.horizontal, 4)
         .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
     }
@@ -460,63 +442,6 @@ struct HomeView: View {
     private var journeyConnector: some View {
         Image(systemName: "chevron.right").font(.caption2.weight(.bold))
             .foregroundStyle(Theme.Color.muted.opacity(0.5)).accessibilityHidden(true)
-    }
-}
-
-/// A compact snapshot of the saved shortlist, from real saved-trial snapshots only.
-/// Metrics that can't be known reliably are omitted rather than estimated.
-private struct ShortlistCard: View {
-    let trials: [SavedTrial]
-    let openSaved: () -> Void
-
-    private var strong: Int { trials.filter { $0.recommendation.map { RelevanceTier(score: $0.score) == .strong } ?? false }.count }
-    private var needsReview: Int {
-        trials.filter { $0.recommendation.map { EligibilitySummary(status: $0.structured_eligibility?.status) != .compatible } ?? false }.count
-    }
-    /// Only when the search profile had a location and a listed site text-matches it.
-    private var nearby: Int? {
-        let withLocation = trials.filter { $0.recommendation != nil && !($0.profile?.location ?? "").isEmpty }
-        guard !withLocation.isEmpty else { return nil }
-        return withLocation.filter { record in
-            guard let loc = record.profile?.location, let trial = record.recommendation?.trial else { return false }
-            return trial.locations.contains { $0.localizedCaseInsensitiveContains(loc) }
-        }.count
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("YOUR SHORTLIST").font(.caption.weight(.semibold)).foregroundStyle(Theme.Color.muted)
-            Text(trials.count == 1 ? "1 saved trial" : "\(trials.count) saved trials").font(.title3.bold())
-            HStack(alignment: .top, spacing: 8) {
-                metric(strong, "Strong\nmatches", "checkmark.circle.fill", Theme.Color.accent)
-                metric(needsReview, "Review\nneeded", "questionmark.circle.fill", Theme.Color.attention)
-                if let nearby { metric(nearby, "Nearby\nsite", "mappin.circle.fill", Theme.Color.evidence) }
-            }
-            Button(action: openSaved) {
-                HStack {
-                    Text("View saved trials")
-                    Spacer()
-                    Image(systemName: "arrow.right")
-                }
-                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.Color.accent).frame(minHeight: 44)
-            }
-        }
-        .padding(Theme.Metrics.cardPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
-        .accessibilityElement(children: .contain)
-    }
-
-    private func metric(_ value: Int, _ label: String, _ symbol: String, _ tint: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: symbol).foregroundStyle(tint).accessibilityHidden(true)
-            Text("\(value)").font(.title2.bold()).monospacedDigit().foregroundStyle(tint)
-            Text(label).font(.caption).foregroundStyle(Theme.Color.muted).multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-        .accessibilityElement(children: .combine)
     }
 }
 
