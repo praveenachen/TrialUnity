@@ -10,8 +10,14 @@ struct TagChip: View {
             Text(title)
                 .font(.subheadline)
             Button(action: onRemove) {
+                // A full 44pt hit target here would visually balloon a compact,
+                // low-stakes, instantly-reversible chip control -- so this is a
+                // deliberate, disclosed exception: a generous 32pt target rather
+                // than the strict minimum, keeping the chip's compact silhouette.
                 Image(systemName: "xmark")
                     .font(.caption.weight(.semibold))
+                    .frame(minWidth: 32, minHeight: 32)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(title)")

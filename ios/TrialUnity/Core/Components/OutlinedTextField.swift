@@ -12,6 +12,7 @@ struct OutlinedTextField: View {
     var body: some View {
         TextField(placeholder, text: $text, axis: axis)
             .keyboardType(keyboardType)
+            .lineLimit(axis == .vertical ? 3...6 : 1...1)
             .textFieldStyle(.plain)
             .padding(Theme.Spacing.m)
             .background(Theme.Color.paper, in: RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous))

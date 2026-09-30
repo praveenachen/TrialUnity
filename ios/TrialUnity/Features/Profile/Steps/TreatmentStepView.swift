@@ -19,14 +19,16 @@ struct TreatmentStepView: View {
         WizardScaffold(
             stepNumber: ProfileStep.treatment.stepNumber,
             totalSteps: ProfileStep.totalSteps,
-            title: "Any treatments you're especially interested in?",
-            subtitle: "Add as many as apply -- this narrows, but never excludes, your matches.",
+            title: "Which treatments interest you?",
+            subtitle: "Choose any that interest you. These preferences help rank trials.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,
             onContinue: onContinue
         ) {
             VStack(alignment: .leading, spacing: Theme.Spacing.m) {
+                DecisionAnchor(symbol: "cross.case", caption: "Choose interests, not your medical history.")
+                SelectableRow(title: "No preference", isSelected: draft.interventionPreferences.isEmpty) { draft.interventionPreferences = [] }
                 OutlinedTextField(
                     placeholder: "Type a treatment and press return",
                     text: $newPreference,

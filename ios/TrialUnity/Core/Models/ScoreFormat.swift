@@ -8,7 +8,7 @@ enum ScoreFormat {
     /// A 0-100 score rounded to the nearest whole number, or "—" if unavailable.
     static func rounded(_ value: Double?) -> String {
         guard let value, value.isFinite else { return "—" }
-        return "\(Int(value.rounded()))"
+        return "\(Int(min(max(value, 0), 100).rounded()))"
     }
 
     /// Clamps to `range` and guarantees a finite result -- for anything that

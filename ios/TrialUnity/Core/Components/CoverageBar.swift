@@ -32,7 +32,7 @@ struct CoverageBar: View {
                 // common `clamped` value for zero evidence coverage) is NaN, which
                 // CoreGraphics then rejects with a runtime warning -- so the width
                 // is clamped to a finite, non-negative value before use, every time.
-                let safeWidth = proxy.size.width.isFinite ? max(0, proxy.size.width) : 0
+                let safeWidth = CGFloat(VisualNumber.dimension(Double(proxy.size.width)))
                 ZStack(alignment: .leading) {
                     Capsule().fill(Theme.Color.hairline)
                     Capsule()

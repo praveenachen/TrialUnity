@@ -10,12 +10,13 @@ struct TravelStepView: View {
             stepNumber: ProfileStep.travel.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "How far are you willing to travel?",
-            subtitle: "This helps us weigh how reachable a trial's sites are.",
+            subtitle: "Keep your travel preference alongside your profile. It does not filter results yet.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,
             onContinue: onContinue
         ) {
+            DecisionAnchor(symbol: "map", caption: draft.location.isEmpty ? "Think about the journey to a study site." : "Starting from \(draft.location)")
             VStack(spacing: Theme.Spacing.s) {
                 ForEach(TravelPreference.allCases) { option in
                     SelectableRow(title: option.rawValue, isSelected: draft.travelPreference == option) {

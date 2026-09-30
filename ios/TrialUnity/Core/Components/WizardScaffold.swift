@@ -22,7 +22,7 @@ struct WizardScaffold<Content: View>: View {
                 StepProgressView(currentStep: stepNumber, totalSteps: totalSteps)
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-                    HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.s) {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text(title)
                             .font(.editorialTitle)
                             .foregroundStyle(Theme.Color.ink)
@@ -41,7 +41,7 @@ struct WizardScaffold<Content: View>: View {
 
                 content
             }
-            .padding(Theme.Spacing.l)
+            .padding(Theme.Metrics.screenPadding)
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Theme.Color.paper)
@@ -52,7 +52,7 @@ struct WizardScaffold<Content: View>: View {
                     SecondaryButton(title: "Skip for now", action: onSkip)
                 }
             }
-            .padding(.horizontal, Theme.Spacing.l)
+            .padding(.horizontal, Theme.Metrics.screenPadding)
             .padding(.top, Theme.Spacing.s)
             .padding(.bottom, Theme.Spacing.m)
             .background(.bar)

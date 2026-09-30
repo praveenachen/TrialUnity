@@ -1,64 +1,75 @@
 import SwiftUI
 
-/// One shortlist row: title, NCT ID, status, location, phase, a qualitative
-/// relevance tier (never a bare score), a one-line eligibility read, and a
-/// one-line ESR/evidence read. Deliberately not a dense multi-stat card.
+/// One shortlist row, styled as a restrained bordered card: identity line
+/// (NCT ID / status / phase), title, location, then a compact footer of
+/// qualitative tiers (never a bare score) and a one-line ESR/evidence read.
+/// Deliberately not a dense multi-stat card, and deliberately not a second
+/// copy of the Trial Passport.
 struct TrialResultRow: View {
+    @Environment(SavedTrialsStore.self) private var savedTrials
     let result: TrialRecommendation
+    var preferredLocation: String? = nil
 
     private var tier: RelevanceTier { RelevanceTier(score: result.score) }
     private var eligibility: EligibilitySummary { EligibilitySummary(status: result.structured_eligibility?.status) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            Text(result.trial.title)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Theme.Color.ink)
-                .lineLimit(2)
+        CardContainer(padding: Theme.Spacing.m) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.s) {
+                HStack(alignment: .top) {
+                    HStack(spacing: Theme.Spacing.xs) {
+                        ProvenanceText(text: result.trial.nct_id)
+                        Text("·").foregroundStyle(Theme.Color.muted)
+                        Text(result.trial.status.capitalized)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(result.trial.status.uppercased() == "RECRUITING" ? Theme.Color.evidence : Theme.Color.muted)
+                        if let phase = result.trial.phases.first {
+                            Text("·").foregroundStyle(Theme.Color.muted)
+                            Text(phase.replacingOccurrences(of: "_", with: " ").capitalized)
+                                .font(.caption)
+                                .foregroundStyle(Theme.Color.muted)
+                        }
+                    }
+                    Spacer(minLength: Theme.Spacing.s)
+                    if savedTrials.contains(result.id) {
+                        Image(systemName: "bookmark.fill")
+                            .font(.caption)
+                            .foregroundStyle(Theme.Color.accent)
+                            .accessibilityLabel("Saved")
+                    }
+                }
 
-            HStack(spacing: Theme.Spacing.xs) {
-                ProvenanceText(text: result.trial.nct_id)
-                Text("·").foregroundStyle(Theme.Color.muted)
-                Text(result.trial.status.capitalized)
-                    .font(.caption)
-                    .foregroundStyle(Theme.Color.muted)
-                if let phase = result.trial.phases.first {
-                    Text("·").foregroundStyle(Theme.Color.muted)
-                    Text(phase.replacingOccurrences(of: "_", with: " ").capitalized)
+                Text(result.trial.title)
+                    .font(.editorialHeadline)
+                    .foregroundStyle(Theme.Color.ink)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let location = PatientPresentation.location(result.trial, near: preferredLocation) {
+                    Label(location, systemImage: "mappin.and.ellipse")
                         .font(.caption)
                         .foregroundStyle(Theme.Color.muted)
+                        .lineLimit(1)
                 }
-            }
 
-            if let location = result.trial.locations.first {
-                Label(location, systemImage: "mappin.and.ellipse")
-                    .font(.caption)
-                    .foregroundStyle(Theme.Color.muted)
-                    .lineLimit(1)
-            }
+                FlowLayout(spacing: Theme.Spacing.s) {
+                    StatusPill(text: tier.label, symbolName: tier.symbolName, tint: tier.tintColor)
+                    StatusPill(text: eligibility.shortLabel, symbolName: eligibility.symbolName, tint: eligibility.tintColor)
+                }
 
-            HStack(spacing: Theme.Spacing.s) {
-                StatusPill(text: tier.label, symbolName: tier.symbolName, tint: tier.tintColor)
-                StatusPill(text: eligibility.shortLabel, symbolName: eligibility.symbolName, tint: eligibility.tintColor)
-            }
-
-            HStack(spacing: Theme.Spacing.xs) {
-                Image(systemName: "shield.checkerboard")
-                    .font(.caption)
-                    .foregroundStyle(Theme.Color.muted)
                 Text(evidenceSummary)
                     .font(.caption)
                     .foregroundStyle(Theme.Color.muted)
             }
         }
-        .padding(.vertical, Theme.Spacing.s)
         .accessibilityElement(children: .combine)
     }
 
     private var evidenceSummary: String {
         guard let esr = result.esr else { return "Access evidence unavailable" }
         guard let score = esr.score, score.isFinite else { return "Access evidence: limited" }
-        return "Access evidence: \(ScoreFormat.rounded(score))/100"
+        let coverage = esr.evidence_coverage.isFinite ? ScoreFormat.clamped(esr.evidence_coverage) : 0
+        return "Representation & access · \(ScoreFormat.rounded(score)) · \(PatientPresentation.evidence(coverage))"
     }
 }
 
@@ -80,5 +91,8 @@ struct TrialResultRow: View {
             esr: ESRResult(score: 63, mode: "mixed", evidence_coverage: 0.6, components: [:], weights_used: [:]),
             representation_risk: nil
         ))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
+    .environment(SavedTrialsStore())
 }

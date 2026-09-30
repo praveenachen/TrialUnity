@@ -5,9 +5,20 @@ import SwiftUI
 struct MatchingView: View {
     @State private var model: MatchingModel
     @State private var attempt = 0
+    var onResultCount: (Int) -> Void = { _ in }
+
+    init(model: MatchingModel, onResultCount: @escaping (Int) -> Void) {
+        _model = State(initialValue: model)
+        self.onResultCount = onResultCount
+    }
 
     init(profile: PatientProfile) {
         _model = State(initialValue: MatchingModel(profile: profile))
+    }
+
+    private var isLoaded: Bool {
+        if case .loaded = model.state { return true }
+        return false
     }
 
     var body: some View {
@@ -24,35 +35,60 @@ struct MatchingView: View {
             }
         }
         .background(Theme.Color.paper)
-        .toolbar { NavigationLink("Saved", destination: SavedTrialsView()) }
+        .toolbar {
+            NavigationLink(destination: SavedTrialsView()) {
+                Label("Saved", systemImage: "bookmark")
+            }
+        }
         .navigationTitle("Matching trials")
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: attempt) { await model.load() }
+        .task(id: attempt) {
+            await model.load()
+            if case .loaded(let response) = model.state { onResultCount(response.results.count) }
+            if case .empty = model.state { onResultCount(0) }
+        }
+        // A single, purposeful haptic when a search actually finishes -- not on
+        // every re-render, and never implying more than "results are ready."
+        .onChange(of: isLoaded) { _, loaded in
+            if loaded { Haptics.matchingCompleted() }
+        }
     }
 
     private func resultsList(_ response: TrialSearchResponse) -> some View {
         List {
             Section {
+                BrandHeader(subtitle: "\(response.results.count) matches for \(model.profile.condition)")
+                    .padding(.vertical, Theme.Spacing.xs)
                 MatchingFunnelSummaryView(funnel: response.funnel)
             }
-            .listRowBackground(Theme.Color.paper)
+            .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: Theme.Spacing.s, leading: Theme.Metrics.screenPadding, bottom: Theme.Spacing.s, trailing: Theme.Metrics.screenPadding))
 
-            Section("Matches") {
+            Section {
                 ForEach(response.results) { result in
                     NavigationLink {
                         TrialPassportView(profile: model.profile, result: result, responseSource: response.source)
                     } label: {
-                        TrialResultRow(result: result)
+                        TrialResultRow(result: result, preferredLocation: model.profile.location)
                     }
-                    .swipeActions(edge: .leading) { SaveTrialButton(result: result, profile: model.profile, source: response.source) }
-                    SaveTrialButton(result: result, profile: model.profile, source: response.source)
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: Theme.Spacing.xs, leading: Theme.Metrics.screenPadding, bottom: Theme.Spacing.xs, trailing: Theme.Metrics.screenPadding))
+                    .swipeActions(edge: .leading) {
+                        SaveTrialButton(result: result, profile: model.profile, source: response.source)
+                    }
                 }
+            } header: {
+                Text("Matches")
             }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
             #if DEBUG
-            Section("Development provenance") {
+            Section {
                 Text("API: \(APIConfiguration.current.baseURL?.absoluteString ?? "Not configured")")
                 Text("Source: \(response.source)")
+            } header: {
+                Text("Development provenance")
             }
             .font(.caption)
             .foregroundStyle(Theme.Color.muted)

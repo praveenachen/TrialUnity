@@ -11,13 +11,16 @@ enum ProfileStep: Int, CaseIterable, Hashable {
     case notes
 
     /// 1-based position, for the "Step X of Y" progress indicator.
-    var stepNumber: Int { rawValue + 1 }
+    private static let guidedSteps: [ProfileStep] = [.condition, .age, .sex, .location, .treatment, .notes]
 
-    static var totalSteps: Int { allCases.count }
+    var stepNumber: Int { (Self.guidedSteps.firstIndex(of: self) ?? 3) + 1 }
+
+    static var totalSteps: Int { guidedSteps.count }
 
     /// The next step in sequence, or `nil` if this is the last one (the caller
     /// should advance to the Review screen instead).
     var next: ProfileStep? {
-        ProfileStep(rawValue: rawValue + 1)
+        guard let index = Self.guidedSteps.firstIndex(of: self), index + 1 < Self.guidedSteps.count else { return nil }
+        return Self.guidedSteps[index + 1]
     }
 }

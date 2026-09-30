@@ -1,201 +1,99 @@
 import SwiftUI
 
-/// A trial's full-screen passport: identity, your match, overview, eligibility
-/// evidence, representation & access, predicted risk, and source -- pushed onto
-/// the navigation stack, not a modal. Every value here comes straight from the
-/// backend's TrialRecommendation; nothing is recalculated in Swift.
 struct TrialPassportView: View {
     let profile: PatientProfile
     let result: TrialRecommendation
     let responseSource: String
-
     private var trial: Trial { result.trial }
-    private var signals: [MatchSignal] { MatchTraceBuilder.build(profile: profile, result: result) }
     private var eligibility: EligibilitySummary { EligibilitySummary(status: result.structured_eligibility?.status) }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Spacing.l) {
-                identitySection
-                yourMatchSection
-                overviewSection
-                eligibilityEvidenceSection
-                representationSection
-                if let risk = result.representation_risk {
-                    PassportSection(title: "Predicted representation risk") {
-                        RepresentationRiskView(risk: risk)
+            VStack(alignment: .leading, spacing: 24) {
+                BrandedSurface {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("\(trial.nct_id) · \(trial.status.capitalized)").font(.caption)
+                        if let phase = trial.phases.first { Text(phase.replacingOccurrences(of: "_", with: " ")).font(.caption) }
+                        Text(trial.title).font(.title2.bold())
+                        if let sponsor = trial.sponsor { Text(sponsor).font(.caption).foregroundStyle(Theme.Color.muted) }
+                        if let location = PatientPresentation.location(trial, near: profile.location) {
+                            Label(location, systemImage: "mappin.and.ellipse").font(.subheadline)
+                        }
                     }
                 }
-                sourceSection
-            }
-            .padding(Theme.Spacing.l)
+                PassportSection(title: "Your match") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ViewThatFits(in: .horizontal) {
+                            HStack { matchLabels }
+                            VStack(alignment: .leading) { matchLabels }
+                        }
+                        MatchTraceView(signals: MatchTraceBuilder.build(profile: profile, result: result))
+                    }
+                }
+                PassportSection(title: "At a glance") {
+                    GlanceGrid(items: [
+                        ("Treatment", trial.interventions.first ?? "Not reported"),
+                        ("Phase", trial.phases.first ?? "Not reported"),
+                        ("Listed site", PatientPresentation.location(trial, near: profile.location) ?? "Not reported"),
+                        ("Status", trial.status.capitalized)
+                    ])
+                }
+                PassportSection(title: "What to confirm", subtitle: "Before contacting this study") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(PatientPresentation.confirmations(result), id: \.self) { item in
+                            Label(item, systemImage: "exclamationmark.circle").font(.subheadline)
+                        }
+                        DisclosureGroup("Review eligibility evidence") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Age: \(trial.minimum_age ?? "Not reported") – \(trial.maximum_age ?? "Not reported")")
+                                Text("Sex requirement: \(trial.sex ?? "Not reported")")
+                                ForEach(result.explanation.eligibility_notes + result.explanation.manual_review_signals, id: \.self) { Text($0) }
+                                if let criteria = result.structured_eligibility?.criteria {
+                                    ForEach(criteria.keys.sorted(), id: \.self) { key in
+                                        if let criterion = criteria[key] { Text(criterion.reason) }
+                                    }
+                                }
+                            }.font(.footnote).padding(.top, 8)
+                        }.font(.subheadline)
+                    }
+                }
+                ESRScoreView(esr: result.esr)
+                PassportSection(title: "About this study") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(PatientPresentation.summary(trial.brief_summary)).font(.subheadline)
+                        DisclosureGroup("Read full study description") {
+                            Text(trial.brief_summary ?? "Not reported").font(.footnote).padding(.top, 8)
+                            Text("Interventions: \(trial.interventions.isEmpty ? "Not reported" : trial.interventions.joined(separator: ", "))").font(.footnote)
+                            Text("Sites: \(trial.locations.isEmpty ? "Not reported" : trial.locations.joined(separator: "; "))").font(.footnote)
+                        }
+                        DisclosureGroup("View full eligibility criteria") { Text(trial.eligibility_criteria ?? "Not reported").font(.footnote).padding(.top, 8) }
+                    }
+                }
+                if let risk = result.representation_risk {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Experimental research insight").font(.caption.bold()).foregroundStyle(Theme.Color.experimental)
+                        Text("Predicted representation risk: \(RiskLevelDisplay.label(risk.risk_level))").font(.subheadline)
+                        Text("Not observed evidence").font(.caption).foregroundStyle(Theme.Color.muted)
+                        DisclosureGroup("Learn more") { RepresentationRiskView(risk: risk).padding(.top, 8) }
+                    }
+                }
+                DisclosureGroup("Source & provenance") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let url = URL(string: trial.source_url ?? "https://clinicaltrials.gov/study/\(trial.nct_id)") { Link("View on ClinicalTrials.gov", destination: url) }
+                        Text("Response source: \(responseSource)")
+                        if let source = trial.enrollment_sex_source { Text(source) }
+                        if let source = trial.enrollment_race_source { Text(source) }
+                    }.font(.footnote).padding(.top, 8)
+                }
+            }.padding(20)
         }
         .background(Theme.Color.paper)
         .toolbar { SaveTrialButton(result: result, profile: profile, source: responseSource) }
-        .navigationTitle("Trial Passport")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Trial Passport").navigationBarTitleDisplayMode(.inline)
     }
-
-    // MARK: A. Trial identity
-
-    private var identitySection: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-            Text(trial.title)
-                .font(.editorialTitle)
-                .foregroundStyle(Theme.Color.ink)
-
-            ProvenanceText(text: trial.nct_id, color: Theme.Color.ink)
-
-            HStack(spacing: Theme.Spacing.s) {
-                StatusPill(text: trial.status.capitalized, symbolName: "circle.fill", tint: statusTint)
-                if let phase = trial.phases.first {
-                    StatusPill(text: phase.replacingOccurrences(of: "_", with: " ").capitalized, symbolName: "chart.bar", tint: Theme.Color.muted)
-                }
-            }
-
-            if let sponsor = trial.sponsor {
-                Text("Sponsor: \(sponsor)")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.Color.muted)
-            }
-            if let location = trial.locations.first {
-                Label(location, systemImage: "mappin.and.ellipse")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.Color.muted)
-            }
-        }
-    }
-
-    private var statusTint: Color {
-        trial.status.uppercased() == "RECRUITING" ? Theme.Color.accent : Theme.Color.muted
-    }
-
-    // MARK: B. Your Match
-
-    private var yourMatchSection: some View {
-        PassportSection(title: "Your match", subtitle: "Relative relevance, not a probability of eligibility.") {
-            VStack(alignment: .leading, spacing: Theme.Spacing.m) {
-                HStack {
-                    Text(RelevanceTier(score: result.score).label)
-                        .font(.headline)
-                        .foregroundStyle(Theme.Color.ink)
-                    Spacer()
-                    Label(eligibility.shortLabel, systemImage: eligibility.symbolName)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(eligibility.tintColor)
-                }
-
-                MatchTraceView(signals: signals)
-
-                if !result.explanation.manual_review_signals.isEmpty {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        Text("Needs manual review")
-                            .font(.sectionLabel)
-                            .foregroundStyle(Theme.Color.muted)
-                        ForEach(result.explanation.manual_review_signals, id: \.self) { note in
-                            Label(note, systemImage: "person.fill.questionmark")
-                                .font(.caption)
-                                .foregroundStyle(Theme.Color.ink)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: C. Trial overview
-
-    private var overviewSection: some View {
-        PassportSection(title: "Trial overview") {
-            VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-                if let summary = trial.brief_summary, !summary.isEmpty {
-                    Text(summary)
-                        .font(.body)
-                        .foregroundStyle(Theme.Color.ink)
-                }
-                overviewRow(label: "Interventions", value: trial.interventions)
-                overviewRow(label: "Phase", value: trial.phases)
-                overviewRow(label: "Locations", value: trial.locations)
-            }
-        }
-    }
-
-    private func overviewRow(label: String, value: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label.uppercased())
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Theme.Color.muted)
-            Text(value.isEmpty ? "Not listed" : value.joined(separator: ", "))
-                .font(.subheadline)
-                .foregroundStyle(Theme.Color.ink)
-        }
-    }
-
-    // MARK: D. Eligibility evidence
-
-    private var eligibilityEvidenceSection: some View {
-        PassportSection(title: "Eligibility evidence", subtitle: "Structured checks only -- not full medical eligibility.") {
-            VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-                overviewRow(label: "Age range", value: [
-                    "Min \(trial.minimum_age ?? "not specified")",
-                    "Max \(trial.maximum_age ?? "not specified")",
-                ])
-                overviewRow(label: "Sex requirement", value: [trial.sex ?? "Not specified"])
-                if let criteria = trial.eligibility_criteria, !criteria.isEmpty {
-                    DisclosureGroup("Full eligibility criteria text") {
-                        Text(criteria)
-                            .font(.footnote)
-                            .foregroundStyle(Theme.Color.ink)
-                            .padding(.top, Theme.Spacing.xs)
-                    }
-                    .font(.caption.weight(.medium))
-                    .tint(Theme.Color.accent)
-                }
-                if !result.explanation.eligibility_notes.isEmpty {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        Text("Needs confirmation")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Theme.Color.muted)
-                        ForEach(result.explanation.eligibility_notes, id: \.self) { note in
-                            Label(note, systemImage: "exclamationmark.circle")
-                                .font(.caption)
-                                .foregroundStyle(Theme.Color.ink)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: E. Representation & Access
-
-    private var representationSection: some View {
-        PassportSection(title: "Representation & access") {
-            ESRScoreView(esr: result.esr)
-        }
-    }
-
-    // MARK: G. Source
-
-    private var sourceSection: some View {
-        PassportSection(title: "Source") {
-            VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-                if let urlString = trial.source_url, let url = URL(string: urlString) {
-                    Link(destination: url) {
-                        Label("View on ClinicalTrials.gov", systemImage: "arrow.up.right.square")
-                            .font(.subheadline.weight(.medium))
-                    }
-                    .tint(Theme.Color.accent)
-                }
-                ProvenanceText(text: "Response source: \(responseSource)")
-                if let sexSource = trial.enrollment_sex_source {
-                    ProvenanceText(text: "Sex enrollment source: \(sexSource)")
-                }
-                if let raceSource = trial.enrollment_race_source {
-                    ProvenanceText(text: "Race enrollment source: \(raceSource)")
-                }
-            }
-        }
+    @ViewBuilder private var matchLabels: some View {
+        Text(RelevanceTier(score: result.score).label).font(.headline)
+        Label(eligibility.shortLabel, systemImage: eligibility.symbolName).font(.subheadline).foregroundStyle(eligibility.tintColor)
     }
 }
 

@@ -5,11 +5,28 @@ struct RootView: View {
     @State private var savedTrials = SavedTrialsStore()
     @State private var draft = PatientProfileDraft()
 
+    @AppStorage("hasEnteredTrialUnity") private var hasEntered = false
+    @State private var tab = 0
+    @State private var activeSearch: MatchingModel?
+    @State private var matchCount: Int?
+
     var body: some View {
-        NavigationStack(path: $path) {
-            WelcomeView(onStart: { path.append(.profileStep(.condition)) })
-                .toolbar { NavigationLink("Saved", destination: SavedTrialsView()) }
-                .navigationDestination(for: AppRoute.self, destination: destination(for:))
+        Group {
+            if !hasEntered && savedTrials.trials.isEmpty {
+                WelcomeView { hasEntered = true; tab = 1 }
+            } else {
+                TabView(selection: $tab) {
+                    NavigationStack {
+                        HomeView(draft: draft, count: matchCount, explore: { if activeSearch != nil { path = [.matching] }; tab = 1 }, openSaved: { tab = 2 })
+                    }.tabItem { Label("Home", systemImage: "house") }.tag(0)
+                    NavigationStack(path: $path) {
+                        ConditionStepView(draft: draft, onContinue: { path.append(.profileStep(.age)) })
+                            .navigationDestination(for: AppRoute.self, destination: destination(for:))
+                    }.tabItem { Label("Find", systemImage: "magnifyingglass") }.tag(1)
+                    NavigationStack { SavedTrialsView() }
+                        .tabItem { Label("Saved", systemImage: "bookmark") }.tag(2)
+                }
+            }
         }
         .environment(savedTrials)
         .alert("Saved trials", isPresented: Binding(get: { savedTrials.message != nil }, set: { if !$0 { savedTrials.message = nil } })) {
@@ -29,10 +46,10 @@ struct RootView: View {
             ProfileReviewView(
                 draft: draft,
                 onEdit: { step in path.append(.editStep(step)) },
-                onContinue: { path.append(.matching) }
+                onContinue: { activeSearch = MatchingModel(profile: PatientProfile(draft: draft)); matchCount = nil; path.append(.matching) }
             )
         case .matching:
-            MatchingView(profile: PatientProfile(draft: draft))
+            if let activeSearch { MatchingView(model: activeSearch) { matchCount = $0 } }
         }
     }
 

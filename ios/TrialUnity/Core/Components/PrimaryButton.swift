@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The one primary call-to-action style in the app (Continue / Save / "Find my matches").
+/// The one primary call-to-action style in the app (Continue / Save / "Find my matches"):
+/// solid brand blue, white label.
 struct PrimaryButton: View {
     let title: String
     var isEnabled: Bool = true
@@ -10,13 +11,12 @@ struct PrimaryButton: View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .frame(maxWidth: .infinity, minHeight: 50)
                 .background(
-                    isEnabled ? Theme.Color.ink : Theme.Color.hairline,
+                    isEnabled ? Theme.Color.accent : Theme.Color.hairline,
                     in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
                 )
-                .foregroundStyle(Theme.Color.paper)
+                .foregroundStyle(.white)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

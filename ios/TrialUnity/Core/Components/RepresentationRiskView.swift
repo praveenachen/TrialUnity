@@ -1,9 +1,10 @@
 import SwiftUI
 
 /// Predicted (not observed) under-representation risk. Deliberately styled
-/// differently from ESRScoreView -- a dashed border, a flask symbol, and an
-/// "EXPERIMENTAL / PREDICTED" label -- so it can never be mistaken for the
-/// authoritative, evidence-based ESR score above it.
+/// differently from ESRScoreView -- a thin neutral-slate border (not the ESR
+/// module's blue branded surface), a flask symbol, and an "Experimental
+/// prediction" label -- so it can never be mistaken for, or read as equally
+/// authoritative as, the observed-evidence ESR score above it.
 struct RepresentationRiskView: View {
     let risk: RepresentationRiskPrediction
 
@@ -11,31 +12,40 @@ struct RepresentationRiskView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.m) {
             HStack(spacing: Theme.Spacing.xs) {
                 Image(systemName: "flask")
-                    .foregroundStyle(Theme.Color.muted)
-                Text("EXPERIMENTAL · PREDICTED · NOT OBSERVED EVIDENCE")
+                    .font(.caption)
+                    .foregroundStyle(Theme.Color.experimental)
+                Text("EXPERIMENTAL PREDICTION")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Theme.Color.muted)
+                    .foregroundStyle(Theme.Color.experimental)
+                    .tracking(0.5)
             }
 
-            HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.s) {
+            HStack {
                 Text("Representation risk")
-                    .font(.sectionLabel)
+                    .font(.subheadline)
                     .foregroundStyle(Theme.Color.muted)
+                Spacer()
                 Text(RiskLevelDisplay.label(risk.risk_level))
-                    .font(.editorialTitle)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.Color.ink)
             }
             .accessibilityElement(children: .combine)
 
             if let confidence = risk.confidence, confidence.isFinite {
-                Text("Confidence: \(ScoreFormat.clamped(confidence), format: .percent.precision(.fractionLength(0)))")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.Color.muted)
+                HStack {
+                    Text("Confidence")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.Color.muted)
+                    Spacer()
+                    Text(ScoreFormat.clamped(confidence), format: .percent.precision(.fractionLength(0)))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.Color.ink)
+                }
             }
 
             if !risk.drivers.isEmpty {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                    Text("Top drivers")
+                    Text("Drivers")
                         .font(.sectionLabel)
                         .foregroundStyle(Theme.Color.muted)
                     ForEach(risk.drivers, id: \.self) { driver in
@@ -47,10 +57,12 @@ struct RepresentationRiskView: View {
                 }
             }
 
+            Divider().overlay(Theme.Color.hairline)
+
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 ForEach(risk.limitations, id: \.self) { limitation in
                     Text(limitation)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(Theme.Color.muted)
                 }
             }
@@ -58,7 +70,7 @@ struct RepresentationRiskView: View {
         .padding(Theme.Spacing.m)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous)
-                .strokeBorder(Theme.Color.hairline, style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .stroke(Theme.Color.hairline, lineWidth: 1)
         )
         .accessibilityElement(children: .contain)
     }

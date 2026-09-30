@@ -5,6 +5,7 @@ import SwiftUI
 /// source note behind that one signal -- reusing exactly what the backend
 /// already returned via MatchTraceBuilder, never recomputed here.
 struct MatchTraceView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let signals: [MatchSignal]
     @State private var expandedID: String?
 
@@ -12,7 +13,7 @@ struct MatchTraceView: View {
         VStack(spacing: 0) {
             ForEach(signals) { signal in
                 MatchSignalRow(signal: signal, isExpanded: expandedID == signal.id) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                         expandedID = (expandedID == signal.id) ? nil : signal.id
                     }
                 }
@@ -32,20 +33,24 @@ private struct MatchSignalRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button(action: onToggle) {
-                HStack {
+                HStack(spacing: Theme.Spacing.s) {
+                    Image(systemName: signal.status.symbolName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(signal.status.tintColor)
+                        .frame(width: 20)
                     Text(signal.label)
                         .font(.body)
                         .foregroundStyle(Theme.Color.ink)
                     Spacer()
-                    Label(signal.statusText, systemImage: signal.status.symbolName)
+                    Text(signal.statusText)
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(color(for: signal.status))
+                        .foregroundStyle(signal.status.tintColor)
                     Image(systemName: "chevron.down")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Theme.Color.muted)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
-                .padding(.vertical, Theme.Spacing.s)
+                .frame(minHeight: Theme.Metrics.minTapTarget)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -64,6 +69,7 @@ private struct MatchSignalRow: View {
                             .foregroundStyle(Theme.Color.muted)
                     }
                 }
+                .padding(.leading, 28)
                 .padding(.bottom, Theme.Spacing.s)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -79,14 +85,6 @@ private struct MatchSignalRow: View {
             Text(value)
                 .font(.subheadline)
                 .foregroundStyle(Theme.Color.ink)
-        }
-    }
-
-    private func color(for status: MatchSignal.Status) -> Color {
-        switch status {
-        case .match: return Theme.Color.accent
-        case .noMatch: return .red
-        case .unknown: return Theme.Color.muted
         }
     }
 }

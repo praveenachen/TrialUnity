@@ -80,32 +80,49 @@ enum SavedTrialPresentation {
     static func number(_ value: Double?) -> String {
         value.map { $0.formatted(.number.precision(.fractionLength(2))) } ?? "Not reported"
     }
+    /// Humanizes a raw backend snake_case token (e.g. "insufficient_data") for
+    /// display when there's no dedicated friendly-label type for it here.
+    private static func humanized(_ raw: String) -> String {
+        raw.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+
     static func fields(_ record: SavedTrial) -> [ComparisonField] {
         let r = record.recommendation
         func list(_ values: [String]?) -> String { values?.isEmpty == false ? values!.joined(separator: ", ") : "Not reported" }
         func component(_ key: String) -> String {
             guard let c = r?.esr?.components[key] else { return "Not reported" }
-            return "\(number(c.score)) · \(c.evidence_type) · \(c.rationale)"
+            let evidence = ESREvidenceType(rawValue: c.evidence_type).label
+            return "\(number(c.score)) · \(evidence) · \(c.rationale)"
         }
         return [
             .init(id: "Clinical relevance", value: r.map { RelevanceTier(score: $0.score).label } ?? "Unknown"),
-            .init(id: "Structured eligibility", value: r?.structured_eligibility?.status ?? "Unknown"),
+            .init(id: "Structured eligibility", value: EligibilitySummary(status: r?.structured_eligibility?.status).label),
             .init(id: "Phase", value: list(r?.trial.phases)),
             .init(id: "Interventions", value: list(r?.trial.interventions)),
             .init(id: "Locations", value: list(r?.trial.locations)),
             .init(id: "Age range", value: "Minimum: \(r?.trial.minimum_age ?? "Not reported"); maximum: \(r?.trial.maximum_age ?? "Not reported")"),
             .init(id: "Sex requirement", value: r?.trial.sex ?? "Not reported"),
-            .init(id: "ESR", value: "\(number(r?.esr?.score)) · evidence mode: \(r?.esr?.mode ?? "Unknown")"),
+            .init(id: "ESR", value: "\(number(r?.esr?.score)) · evidence: \(r?.esr.map { humanized($0.mode) } ?? "Unknown")"),
             .init(id: "ESR evidence coverage", value: r?.esr.map { $0.evidence_coverage.formatted(.percent) } ?? "Not reported"),
             .init(id: "Socioeconomic access", value: component("socioeconomic")),
             .init(id: "Sex representation / inclusivity", value: component("sex")),
             .init(id: "Race representation", value: component("race")),
-            .init(id: "Experimental predicted representation risk", value: r?.representation_risk.map { "\($0.risk_level ?? "Unknown") · predicted, not observed ESR evidence. \($0.limitations.joined(separator: " "))" } ?? "Not reported")
+            .init(id: "Experimental predicted representation risk", value: r?.representation_risk.map { "\(RiskLevelDisplay.label($0.risk_level)) · predicted, not observed ESR evidence. \($0.limitations.joined(separator: " "))" } ?? "Not reported")
         ]
     }
 }
 
 enum AppointmentBrief {
+    /// Friendly labels for structured eligibility criterion keys, so the brief
+    /// reads as prose rather than raw backend field names like "minimum_age".
+    private static let criterionLabels: [String: String] = [
+        "minimum_age": "Minimum age", "maximum_age": "Maximum age",
+        "sex": "Sex", "recruitment_status": "Recruitment status",
+    ]
+    private static func criterionLabel(_ key: String) -> String {
+        criterionLabels[key] ?? key.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+
     static func generate(_ trials: [SavedTrial], context: String) -> String {
         var lines = ["TrialUnity — appointment shortlist", "Patient-entered condition/context: \(context.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Not provided" : context)"]
         for item in trials.prefix(3) {
@@ -116,9 +133,10 @@ enum AppointmentBrief {
             if let eligibility = r?.structured_eligibility {
                 for key in eligibility.criteria.keys.sorted() {
                     if let c = eligibility.criteria[key] {
-                        lines.append("- \(key): \(c.state). \(c.reason)")
+                        let label = criterionLabel(key)
+                        lines.append("- \(label): \(EligibilitySummary(status: c.state).shortLabel). \(c.reason)")
                         if c.state != "compatible" {
-                            lines.append("- Ask the care team to clarify \(key): \(c.reason)")
+                            lines.append("- Ask the care team to clarify \(label): \(c.reason)")
                         }
                     }
                 }

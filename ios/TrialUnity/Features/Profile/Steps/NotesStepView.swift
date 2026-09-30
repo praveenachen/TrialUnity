@@ -9,13 +9,14 @@ struct NotesStepView: View {
         WizardScaffold(
             stepNumber: ProfileStep.notes.stepNumber,
             totalSteps: ProfileStep.totalSteps,
-            title: "Anything else worth mentioning?",
+            title: "Any additional context?",
             subtitle: "Prior treatments, biomarkers, or scheduling constraints -- whatever feels relevant.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,
             onContinue: onContinue
         ) {
+            DecisionAnchor(symbol: "note.text", caption: "Optional context, in your own words. Leave this blank if you prefer.")
             OutlinedTextField(
                 placeholder: "Notes",
                 text: $draft.notes,
