@@ -305,17 +305,10 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text("YOUR TRIAL JOURNEY").font(.caption.weight(.semibold)).foregroundStyle(Theme.Color.muted)
-                    HStack(alignment: .center, spacing: 4) {
-                        journeyTile(value: count.map(String.init) ?? "—", label: "Matches", symbol: "magnifyingglass", tint: Theme.Color.accent)
-                        journeyConnector
-                        journeyTile(value: String(saved.trials.count), label: "Saved", symbol: "bookmark.fill", tint: Theme.Color.evidence)
-                        journeyConnector
-                        let briefs = activity?.briefIDs.count ?? 0
-                        Button(action: openSaved) {
-                            journeyTile(value: briefs > 0 ? String(briefs) : "",
-                                        label: briefs > 0 ? (briefs == 1 ? "Brief" : "Briefs") : "Start brief →",
-                                        symbol: "doc.text", tint: Theme.Color.violet)
-                        }.buttonStyle(.plain)
+                    HStack(alignment: .top, spacing: 8) {
+                        journeyValue(count.map(String.init) ?? "—", label: "Matches", tint: Theme.Color.accent)
+                        journeyValue(String(saved.trials.count), label: "Saved", tint: Theme.Color.evidence)
+                        journeyValue(String(activity?.briefIDs.count ?? 0), label: "Briefs", tint: .purple)
                     }
                 }
                 .padding(Theme.Metrics.cardPadding)
@@ -425,23 +418,15 @@ struct HomeView: View {
         }
     }
 
-    private func journeyTile(value: String, label: String, symbol: String, tint: Color) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: symbol).font(.title2.weight(.semibold)).foregroundStyle(tint)
-                .frame(minHeight: 30)
-            Text(value.isEmpty ? label : "\(value) \(label)")
-                .font(.footnote.weight(.semibold)).foregroundStyle(tint)
-                .lineLimit(1).minimumScaleFactor(0.75)
+    private func journeyValue(_ value: String, label: String, tint: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(value).font(.title2.bold()).monospacedDigit().foregroundStyle(tint)
+            Text(label).font(.caption).foregroundStyle(Theme.Color.muted)
         }
-        .frame(maxWidth: .infinity, minHeight: 80)
-        .padding(.horizontal, 4)
-        .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
-    }
-
-    private var journeyConnector: some View {
-        Image(systemName: "chevron.right").font(.caption2.weight(.bold))
-            .foregroundStyle(Theme.Color.muted.opacity(0.5)).accessibilityHidden(true)
     }
 }
 
