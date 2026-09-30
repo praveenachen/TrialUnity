@@ -8,7 +8,7 @@ struct WelcomeView: View {
         VStack(spacing: 20) {
             Spacer()
             VStack(spacing: 28) {
-                SwirlingLogo()
+                AnimatedCareLogo()
                 Text("TrialUnity").font(.title.bold())
             }
             .frame(maxWidth: .infinity)
@@ -25,74 +25,126 @@ struct WelcomeView: View {
     }
 }
 
-/// Two figures holding hands inside a white disc. On launch a ring draws itself
-/// once around the mark, then the disc, figures and joined hands settle in.
-/// No looping; shown fully drawn under Reduce Motion.
-private struct SwirlingLogo: View {
+/// A hand cradling a heart, inside a white disc. On launch a ring draws itself
+/// once around the mark, then the crescent, hand and heart settle in. No looping;
+/// shown fully drawn under Reduce Motion.
+private struct AnimatedCareLogo: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var ring: CGFloat = 0
     @State private var disc = false
-    @State private var figures = false
-    @State private var hands: CGFloat = 0
+    @State private var crescent = false
+    @State private var hand = false
+    @State private var heart = false
 
-    private let blue = Color(red: 37/255, green: 99/255, blue: 235/255)
-    private let lightBlue = Color(red: 147/255, green: 185/255, blue: 250/255)
+    private let dark = Color(red: 37/255, green: 68/255, blue: 154/255)
+    private let light = Color(red: 74/255, green: 154/255, blue: 219/255)
+    private let soft = Color(red: 108/255, green: 155/255, blue: 211/255)
 
     var body: some View {
         ZStack {
-            Circle().stroke(.white.opacity(0.18), lineWidth: 3).frame(width: 176, height: 176)
+            Circle().stroke(.white.opacity(0.18), lineWidth: 3).frame(width: 196, height: 196)
             Circle().trim(from: 0, to: ring)
                 .stroke(.white, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                .frame(width: 176, height: 176)
+                .frame(width: 196, height: 196)
                 .rotationEffect(.degrees(-90))
 
-            Circle().fill(.white).frame(width: 140, height: 140)
+            Circle().fill(.white).frame(width: 164, height: 164)
                 .scaleEffect(disc ? 1 : 0.85).opacity(disc ? 1 : 0)
 
             ZStack {
-                figure(x: 42, color: blue)
-                figure(x: 78, color: lightBlue)
-                Arms().trim(from: 0, to: hands)
-                    .stroke(blue, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-                Circle().fill(blue).frame(width: 11, height: 11).position(x: 60, y: 80)
-                    .scaleEffect(hands == 1 ? 1 : 0.01)
+                CrescentShape().fill(light)
+                    .rotationEffect(.degrees(crescent ? 0 : -40), anchor: .center)
+                    .opacity(crescent ? 1 : 0)
+                Group {
+                    HandShape().fill(dark)
+                    FingerShape().fill(dark)
+                }
+                .offset(y: hand ? 0 : 14).opacity(hand ? 1 : 0)
+                ZStack {
+                    HeartShape().fill(dark).frame(width: 40, height: 38).offset(y: 2)
+                    HeartShape().fill(soft).frame(width: 27, height: 25).offset(y: 4)
+                }
+                .scaleEffect(heart ? 1 : 0.2).opacity(heart ? 1 : 0)
             }
-            .frame(width: 120, height: 120)
-            .offset(y: figures ? 0 : 10).opacity(figures ? 1 : 0)
+            .frame(width: 100, height: 100)
+            .scaleEffect(1.15)
         }
-        .frame(width: 180, height: 180)
+        .frame(width: 200, height: 200)
         .onAppear(perform: play)
         .accessibilityHidden(true)
     }
 
-    private func figure(x: CGFloat, color: Color) -> some View {
-        ZStack {
-            Circle().fill(color).frame(width: 20, height: 20).position(x: x, y: 38)
-            UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 4, bottomTrailingRadius: 4, topTrailingRadius: 14)
-                .fill(color).frame(width: 28, height: 38).position(x: x, y: 77)
-        }
-    }
-
     private func play() {
-        guard !reduceMotion else { ring = 1; disc = true; figures = true; hands = 1; return }
+        guard !reduceMotion else { ring = 1; disc = true; crescent = true; hand = true; heart = true; return }
         withAnimation(.easeInOut(duration: 1.3)) { ring = 1 }
         withAnimation(.easeOut(duration: 0.5).delay(0.6)) { disc = true }
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.9)) { figures = true }
-        withAnimation(.easeInOut(duration: 0.5).delay(1.4)) { hands = 1 }
+        withAnimation(.easeOut(duration: 0.7).delay(0.9)) { crescent = true }
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(1.1)) { hand = true }
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.55).delay(1.5)) { heart = true }
     }
 }
 
-/// The two inner arms, curving down from each figure to the clasp point.
-private struct Arms: Shape {
+/// Paths are authored in a 100x100 space and scaled to the frame.
+private func scaled(_ rect: CGRect, _ build: (inout Path) -> Void) -> Path {
+    var p = Path(); build(&p)
+    return p.applying(CGAffineTransform(scaleX: rect.width / 100, y: rect.height / 100))
+}
+
+/// Light-blue crescent sweeping around the left and top.
+struct CrescentShape: Shape {
     func path(in rect: CGRect) -> Path {
-        var p = Path()
-        p.move(to: CGPoint(x: 52, y: 66))
-        p.addQuadCurve(to: CGPoint(x: 60, y: 80), control: CGPoint(x: 54, y: 78))
-        p.move(to: CGPoint(x: 68, y: 66))
-        p.addQuadCurve(to: CGPoint(x: 60, y: 80), control: CGPoint(x: 66, y: 78))
-        return p
+        scaled(rect) { p in
+            p.move(to: CGPoint(x: 28, y: 78))
+            p.addCurve(to: CGPoint(x: 67, y: 24), control1: CGPoint(x: 0, y: 58), control2: CGPoint(x: 24, y: 4))
+            p.addCurve(to: CGPoint(x: 28, y: 78), control1: CGPoint(x: 42, y: 22), control2: CGPoint(x: 26, y: 54))
+            p.closeSubpath()
+        }
     }
 }
+
+/// Dark-blue open hand cradling from the bottom-left up to the fingers at top right.
+struct HandShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        scaled(rect) { p in
+            p.move(to: CGPoint(x: 3, y: 58))
+            p.addCurve(to: CGPoint(x: 70, y: 98), control1: CGPoint(x: 8, y: 90), control2: CGPoint(x: 45, y: 106))
+            p.addCurve(to: CGPoint(x: 92, y: 40), control1: CGPoint(x: 90, y: 88), control2: CGPoint(x: 98, y: 62))
+            p.addCurve(to: CGPoint(x: 78, y: 4), control1: CGPoint(x: 88, y: 24), control2: CGPoint(x: 86, y: 8))
+            p.addCurve(to: CGPoint(x: 84, y: 40), control1: CGPoint(x: 76, y: 14), control2: CGPoint(x: 86, y: 28))
+            p.addCurve(to: CGPoint(x: 72, y: 70), control1: CGPoint(x: 84, y: 54), control2: CGPoint(x: 80, y: 64))
+            p.addCurve(to: CGPoint(x: 10, y: 66), control1: CGPoint(x: 52, y: 88), control2: CGPoint(x: 22, y: 84))
+            p.addCurve(to: CGPoint(x: 3, y: 58), control1: CGPoint(x: 6, y: 64), control2: CGPoint(x: 4, y: 62))
+            p.closeSubpath()
+        }
+    }
+}
+
+/// Second, shorter finger beside the first.
+struct FingerShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        scaled(rect) { p in
+            p.move(to: CGPoint(x: 62, y: 14))
+            p.addCurve(to: CGPoint(x: 79, y: 56), control1: CGPoint(x: 70, y: 22), control2: CGPoint(x: 77, y: 40))
+            p.addCurve(to: CGPoint(x: 72, y: 34), control1: CGPoint(x: 74, y: 50), control2: CGPoint(x: 72, y: 42))
+            p.addCurve(to: CGPoint(x: 62, y: 14), control1: CGPoint(x: 71, y: 26), control2: CGPoint(x: 66, y: 20))
+            p.closeSubpath()
+        }
+    }
+}
+
+struct HeartShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        scaled(rect) { p in
+            p.move(to: CGPoint(x: 50, y: 92))
+            p.addCurve(to: CGPoint(x: 4, y: 34), control1: CGPoint(x: 28, y: 72), control2: CGPoint(x: 4, y: 56))
+            p.addCurve(to: CGPoint(x: 50, y: 26), control1: CGPoint(x: 4, y: 10), control2: CGPoint(x: 40, y: 6))
+            p.addCurve(to: CGPoint(x: 96, y: 34), control1: CGPoint(x: 60, y: 6), control2: CGPoint(x: 96, y: 10))
+            p.addCurve(to: CGPoint(x: 50, y: 92), control1: CGPoint(x: 96, y: 56), control2: CGPoint(x: 72, y: 72))
+            p.closeSubpath()
+        }
+    }
+}
+
 
 /// The locally stored "account": a name and email kept on this device. There is no
 /// server or authentication; it only scopes local data (saved trials, activity) per person.
