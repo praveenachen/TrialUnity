@@ -19,7 +19,8 @@ struct SelectableRow: View {
                     .imageScale(.large)
             }
             .padding(Theme.Spacing.m)
-            .background(Theme.Color.paper, in: RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous))
+            .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
+            .background(isSelected ? Theme.Color.surface : Theme.Color.paper, in: RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous)
                     .stroke(isSelected ? Theme.Color.accent : Theme.Color.hairline, lineWidth: isSelected ? 1.5 : 1)

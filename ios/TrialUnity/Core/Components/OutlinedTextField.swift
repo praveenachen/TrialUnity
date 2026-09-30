@@ -14,6 +14,7 @@ struct OutlinedTextField: View {
             .keyboardType(keyboardType)
             .lineLimit(axis == .vertical ? 3...6 : 1...1)
             .textFieldStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Theme.Spacing.m)
             .background(Theme.Color.paper, in: RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous))
             .overlay(

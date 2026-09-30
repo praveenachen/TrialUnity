@@ -1,87 +1,89 @@
 import SwiftUI
 
-/// The four conceptual retrieval stages. Shared between the loading state (no
-/// counts yet -- the backend does this in one request, so there is no honest
-/// per-stage progress to animate) and the loaded state (real counts from
-/// `MatchingFunnel`).
-private let stageLabels = [
-    "Searching current studies",
-    "Checking structured eligibility",
-    "Ranking relevant trials",
-    "Reviewing representation evidence",
-]
-
-/// Shown while the request is in flight. Never fakes progress ticking or counts:
-/// the backend answers in one request, so there's no real per-stage completion
-/// signal to report. Instead, a single highlight drifts down the stage list on a
-/// fixed cadence -- motion that says "still working," not "stage N is done."
-/// Skips the drift (shows a plain static list) when Reduce Motion is on.
+/// Centered, animated search-in-progress state. Checklist progress comes from
+/// MatchingModel (real backend stages, paced client-side only between them);
+/// nothing here invents counts or results.
 struct MatchingFunnelLoadingView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 28) {
-            DecisionAnchor(symbol: "point.3.connected.trianglepath.dotted", caption: "From study records to a shortlist you can explore.")
-            Text("Finding trials for you").font(.title.bold())
-            ProgressView("Searching and reviewing evidence…")
-            Text("Counts appear when your search finishes.").font(.subheadline).foregroundStyle(Theme.Color.muted)
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(stageLabels, id: \.self) { stage in
-                    Label(stage, systemImage: "circle").font(.subheadline).foregroundStyle(Theme.Color.muted)
-                }
-            }
-        }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// Shown once results have loaded, with the real per-stage counts the backend
-/// actually evaluated -- never invented. One compact, branded module, not four
-/// plain floating rows: quick comprehension, not analytics.
-struct MatchingFunnelSummaryView: View {
-    let funnel: MatchingFunnel
-
-    private var stages: [(count: Int, label: String)] {
-        [
-            (funnel.candidate_trials, "Studies found"),
-            (funnel.recruiting_trials, "Recruiting"),
-            (funnel.structured_eligible_trials, "Structured checks"),
-            (funnel.ranked_matches, "Matches"),
-        ]
-    }
+    var completedSteps = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var spinning = false
+    private let steps = [
+        "Searching current studies",
+        "Checking structured eligibility",
+        "Ranking relevant trials",
+        "Reviewing representation evidence",
+    ]
 
     var body: some View {
-        BrandedSurface {
-            VStack(alignment: .leading, spacing: Theme.Spacing.m) {
-                Text("YOUR SEARCH")
-                    .font(.sectionLabel)
-                    .foregroundStyle(Theme.Color.muted)
-                    .tracking(0.5)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(stages.enumerated()), id: \.offset) { index, stage in
-                        HStack {
-                            Text("\(stage.count)").font(.title3.bold()).monospacedDigit().frame(minWidth: 44, alignment: .leading)
-                            Text(stage.label).font(.subheadline)
-                        }
-                        if index < stages.count - 1 { Image(systemName: "arrow.down").font(.caption).foregroundStyle(Theme.Color.accent).padding(.leading, 14) }
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: Theme.Spacing.xxl) {
+                    VStack(spacing: Theme.Spacing.l) {
+                        wheel
+                        Text("Finding trials for you")
+                            .font(.title2.bold())
+                            .multilineTextAlignment(.center)
+                        Text("Searching and reviewing studies...")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.Color.muted)
+                            .multilineTextAlignment(.center)
                     }
-                }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .combine)
 
-                Capsule()
-                    .fill(Theme.Color.hairline)
-                    .frame(height: 3)
+                    VStack(alignment: .leading, spacing: Theme.Spacing.l) {
+                        ForEach(Array(steps.enumerated()), id: \.offset) { index, title in
+                            row(index: index, title: title)
+                        }
+                    }
+                    .frame(maxWidth: 320, alignment: .leading)
+                }
+                .padding(Theme.Metrics.screenPadding)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
         }
+    }
+
+    @ViewBuilder private var wheel: some View {
+        if reduceMotion {
+            ProgressView().controlSize(.large).tint(Theme.Color.accent)
+        } else {
+            ZStack {
+                Circle().stroke(Theme.Color.accent.opacity(0.15), lineWidth: 6)
+                Circle()
+                    .trim(from: 0, to: 0.3)
+                    .stroke(Theme.Color.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(spinning ? 360 : 0))
+                    .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: spinning)
+            }
+            .frame(width: 72, height: 72)
+            .onAppear { spinning = true }
+        }
+    }
+
+    private func row(index: Int, title: String) -> some View {
+        let done = index < completedSteps
+        let current = index == completedSteps
+        return HStack(spacing: Theme.Spacing.m) {
+            Image(systemName: done ? "checkmark.circle.fill" : (current ? "circle.inset.filled" : "circle"))
+                .font(.title3)
+                .foregroundStyle(done ? Theme.Color.evidence : (current ? Theme.Color.accent : Theme.Color.muted.opacity(0.6)))
+                .contentTransition(.symbolEffect(.replace))
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.subheadline.weight(current ? .semibold : .regular))
+                .foregroundStyle(done || current ? Theme.Color.ink : Theme.Color.muted)
+        }
+        .padding(.horizontal, Theme.Spacing.m)
+        .frame(minHeight: 40, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(current ? Theme.Color.accent.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+        .animation(.easeInOut(duration: 0.3), value: completedSteps)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(stages.map { "\($0.label): \($0.count)" }.joined(separator: ". "))
+        .accessibilityLabel("\(title), \(done ? "complete" : (current ? "in progress" : "waiting"))")
     }
 }
 
 #Preview("Loading") {
-    MatchingFunnelLoadingView()
-}
-
-#Preview("Summary") {
-    MatchingFunnelSummaryView(funnel: MatchingFunnel(
-        candidate_trials: 25, recruiting_trials: 25, structured_eligible_trials: 18, ranked_matches: 10
-    ))
-    .padding()
+    MatchingFunnelLoadingView(completedSteps: 2)
 }

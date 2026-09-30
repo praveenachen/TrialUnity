@@ -10,20 +10,28 @@ struct NotesStepView: View {
             stepNumber: ProfileStep.notes.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "Any additional context?",
-            subtitle: "Prior treatments, biomarkers, or scheduling constraints -- whatever feels relevant.",
+            subtitle: "Add anything you’d like the study team to know.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,
             onContinue: onContinue
         ) {
-            DecisionAnchor(symbol: "note.text", caption: "Optional context, in your own words. Leave this blank if you prefer.")
+            FlowLayout(spacing: Theme.Spacing.s) {
+                ForEach(["Biomarkers", "Prior treatment", "Travel limits", "Scheduling"], id: \.self) { topic in
+                    SuggestionChip(title: topic) {
+                        let prompt = "\(topic): "
+                        if !draft.notes.contains(prompt) {
+                            draft.notes += (draft.notes.isEmpty ? "" : "\n") + prompt
+                        }
+                    }
+                }
+            }
             OutlinedTextField(
                 placeholder: "Notes",
                 text: $draft.notes,
                 axis: .vertical,
                 accessibilityLabelText: "Additional notes"
             )
-            .frame(minHeight: 120, alignment: .top)
         }
     }
 }

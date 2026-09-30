@@ -86,6 +86,35 @@ final class IntegrationTests: XCTestCase {
         XCTAssertEqual(response.results.count, 1)
     }
 
+    @MainActor func testStreamProgressAndResult() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StubURLProtocol.self]
+        let client = APIClient(configuration: .init(baseURL: URL(string: "http://127.0.0.1:8001")), session: URLSession(configuration: configuration))
+        let responseJSON = String(decoding: try fixture(), as: UTF8.self).replacingOccurrences(of: "\n", with: "")
+        let events = "{\"completed\":1}\n{\"completed\":2}\n{\"completed\":3,\"response\":\(responseJSON)}\n"
+        StubURLProtocol.handler = { request in
+            XCTAssertEqual(request.url?.path, "/api/recommendations/stream")
+            return (200, Data(events.utf8))
+        }
+        var progress: [Int] = []
+        let response = try await client.recommendations(for: PatientProfile(draft: .sample)) { progress.append($0) }
+        XCTAssertEqual(progress, [1, 2, 3])
+        XCTAssertEqual(response.results.count, 1)
+    }
+
+    @MainActor func testStreamFailureDoesNotCompleteRemainingChecks() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StubURLProtocol.self]
+        let client = APIClient(configuration: .init(baseURL: URL(string: "http://127.0.0.1:8001")), session: URLSession(configuration: configuration))
+        StubURLProtocol.handler = { _ in (200, Data("{\"completed\":1}\n{\"error\":\"Search failed\"}\n".utf8)) }
+        var progress: [Int] = []
+        do {
+            _ = try await client.recommendations(for: PatientProfile(draft: .sample)) { progress.append($0) }
+            XCTFail("Expected failure")
+        } catch { XCTAssertEqual(error as? APIError, .unavailable) }
+        XCTAssertEqual(progress, [1])
+    }
+
     @MainActor func testStateTransitionsAndDuplicateGuard() async throws {
         let client = ControlledClient()
         let model = MatchingModel(profile: PatientProfile(draft: .sample), client: client)
@@ -116,6 +145,23 @@ final class IntegrationTests: XCTestCase {
         let cancelled = MatchingModel(profile: PatientProfile(draft: .sample), client: ImmediateClient(result: .failure(CancellationError())))
         await cancelled.load()
         guard case .idle = cancelled.state else { return XCTFail() }
+    }
+
+    @MainActor func testChecklistAdvancesAndCompletesOnlyOnSuccess() async throws {
+        let response = try JSONDecoder().decode(TrialSearchResponse.self, from: fixture())
+        let ok = MatchingModel(profile: PatientProfile(draft: .sample), client: SteppedClient(result: .success(response)),
+                               paceInterval: .milliseconds(10), completionPause: .milliseconds(1))
+        let task = Task { await ok.load() }
+        while ok.completedSteps < 3 { await Task.yield() }   // paced past stage 1, still in flight
+        XCTAssertLessThan(ok.completedSteps, MatchingModel.stepCount)
+        await task.value
+        XCTAssertEqual(ok.completedSteps, MatchingModel.stepCount)
+
+        let bad = MatchingModel(profile: PatientProfile(draft: .sample), client: SteppedClient(result: .failure(APIError.unavailable)),
+                                paceInterval: .milliseconds(10), completionPause: .milliseconds(1))
+        await bad.load()
+        guard case .failed = bad.state else { return XCTFail() }
+        XCTAssertLessThan(bad.completedSteps, MatchingModel.stepCount)
     }
 
     func testLocalEndToEnd() async throws {
@@ -156,4 +202,15 @@ private final class ControlledClient: RecommendationsProviding {
 private struct ImmediateClient: RecommendationsProviding {
     let result: Result<TrialSearchResponse, Error>
     func recommendations(for profile: PatientProfile) async throws -> TrialSearchResponse { try result.get() }
+}
+
+/// Reports the first backend stage, then stays in flight briefly before resolving.
+private struct SteppedClient: RecommendationsProviding {
+    let result: Result<TrialSearchResponse, Error>
+    func recommendations(for profile: PatientProfile) async throws -> TrialSearchResponse { try result.get() }
+    func recommendations(for profile: PatientProfile, progress: @escaping @MainActor (Int) -> Void) async throws -> TrialSearchResponse {
+        await progress(1)
+        try await Task.sleep(for: .milliseconds(300))
+        return try result.get()
+    }
 }

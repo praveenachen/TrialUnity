@@ -12,7 +12,7 @@ struct SecondaryButton: View {
             Text(title)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(Theme.Color.accent)
-                .frame(maxWidth: .infinity, minHeight: Theme.Metrics.minTapTarget)
+                .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
                 .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)

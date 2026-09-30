@@ -31,18 +31,6 @@ struct RepresentationRiskView: View {
             }
             .accessibilityElement(children: .combine)
 
-            if let confidence = risk.confidence, confidence.isFinite {
-                HStack {
-                    Text("Confidence")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.Color.muted)
-                    Spacer()
-                    Text(ScoreFormat.clamped(confidence), format: .percent.precision(.fractionLength(0)))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.Color.ink)
-                }
-            }
-
             if !risk.drivers.isEmpty {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text("Drivers")

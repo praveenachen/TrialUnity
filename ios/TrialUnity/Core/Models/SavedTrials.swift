@@ -18,7 +18,21 @@ struct SavedTrial: Codable, Identifiable {
     var message: String?
     private let file: URL
 
-    init(file: URL = URL.applicationSupportDirectory.appendingPathComponent("TrialUnity/saved-trials-v1.json")) {
+    static let legacyFile = URL.applicationSupportDirectory.appendingPathComponent("TrialUnity/saved-trials-v1.json")
+
+    /// Per-user store location. Saved trials from before local sign-in (one shared
+    /// file) are copied into the first user's file rather than lost.
+    static func file(forUser key: String) -> URL {
+        let file = URL.applicationSupportDirectory.appendingPathComponent("TrialUnity/saved-trials-\(key).json")
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: file.path), fm.fileExists(atPath: legacyFile.path) {
+            try? fm.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? fm.moveItem(at: legacyFile, to: file)
+        }
+        return file
+    }
+
+    init(file: URL = SavedTrialsStore.legacyFile) {
         self.file = file
         guard FileManager.default.fileExists(atPath: file.path) else { return }
         do {
@@ -127,7 +141,7 @@ enum AppointmentBrief {
         var lines = ["TrialUnity — appointment shortlist", "Patient-entered condition/context: \(context.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Not provided" : context)"]
         for item in trials.prefix(3) {
             let r = item.recommendation
-            lines += ["", "\(item.displayTitle) (\(item.id))", "Source: \(item.source ?? "Unknown")", "Registry: \(item.sourceLink)", "Saved snapshot; confirm current recruitment and site details.", "Why it surfaced: \(r?.explanation.ranking_rationale ?? "Not reported")"]
+            lines += ["", "\(item.displayTitle) (\(item.id))", "Source: \(item.source ?? "Unknown")", "Registry: \(item.sourceLink)", "Saved snapshot; confirm current recruitment and site details.", "Why it surfaced: \(r.map { RelevanceTier(score: $0.score).label } ?? "Relevance unknown")"]
             if let profile = item.profile { lines.append("Original search condition: \(profile.condition)") }
             lines.append("Eligibility items to confirm:")
             if let eligibility = r?.structured_eligibility {

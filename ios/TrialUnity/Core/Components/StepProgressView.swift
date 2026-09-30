@@ -7,17 +7,17 @@ struct StepProgressView: View {
     let totalSteps: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.s) {
             HStack(spacing: 4) {
                 ForEach(1...max(totalSteps, 1), id: \.self) { index in
                     Capsule()
-                        .fill(index <= currentStep ? Theme.Color.ink : Theme.Color.hairline)
-                        .frame(height: 3)
+                        .fill(index <= currentStep ? Theme.Color.accent : Theme.Color.accent.opacity(0.15))
+                        .frame(height: 5)
                 }
             }
             Text("Step \(currentStep) of \(totalSteps)")
-                .font(.caption)
-                .foregroundStyle(Theme.Color.muted)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.Color.accent)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Step \(currentStep) of \(totalSteps)")

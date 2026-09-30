@@ -6,12 +6,13 @@ import SwiftUI
 /// language.
 struct SavedTrialRow: View {
     let record: SavedTrial
+    var showsDisclosure = false
 
     var body: some View {
         CardContainer(padding: Theme.Spacing.m) {
             VStack(alignment: .leading, spacing: Theme.Spacing.s) {
                 HStack(alignment: .top) {
-                    HStack(spacing: Theme.Spacing.xs) {
+                    FlowLayout(spacing: Theme.Spacing.xs) {
                         ProvenanceText(text: record.id)
                         if let date = record.savedAt {
                             Text("·").foregroundStyle(Theme.Color.muted)
@@ -27,14 +28,20 @@ struct SavedTrialRow: View {
                         .accessibilityHidden(true)
                 }
 
-                Text(record.displayTitle)
-                    .font(.editorialHeadline)
-                    .foregroundStyle(Theme.Color.ink)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: Theme.Spacing.s) {
+                    Text(record.displayTitle)
+                        .font(.editorialHeadline)
+                        .foregroundStyle(Theme.Color.ink)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if showsDisclosure {
+                        CardNavigationArrow()
+                    }
+                }
 
                 if let result = record.recommendation {
-                    Text(result.trial.status.capitalized).font(.caption).foregroundStyle(Theme.Color.muted)
+                    TrialStatusText(status: result.trial.status)
                     if let location = PatientPresentation.location(result.trial, near: record.profile?.location) {
                         Label(location, systemImage: "mappin.and.ellipse")
                             .font(.caption)

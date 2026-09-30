@@ -8,26 +8,18 @@ struct ReviewRow: View {
     let onEdit: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            HStack {
-                Text(label.uppercased())
-                    .font(.sectionLabel)
-                    .foregroundStyle(Theme.Color.muted)
-                Spacer()
-                Button("Edit", action: onEdit)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.Color.accent)
-            }
-            Text(value)
-                .font(.body)
-                .foregroundStyle(Theme.Color.ink)
+        HStack(alignment: .top, spacing: Theme.Spacing.m) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                Text(label).font(.caption).foregroundStyle(Theme.Color.muted)
+                Text(value).font(.subheadline).foregroundStyle(Theme.Color.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            Button("Edit", action: onEdit)
+                .font(.subheadline.weight(.medium)).foregroundStyle(Theme.Color.accent)
+                .frame(minWidth: 44, minHeight: 44)
         }
-        .padding(Theme.Spacing.m)
-        .background(Theme.Color.paper, in: RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.field, style: .continuous)
-                .stroke(Theme.Color.hairline, lineWidth: 1)
-        )
+        .padding(.vertical, Theme.Spacing.s)
+        .overlay(alignment: .bottom) { Divider() }
         .accessibilityElement(children: .combine)
         .accessibilityAction(named: Text("Edit \(label)"), onEdit)
     }

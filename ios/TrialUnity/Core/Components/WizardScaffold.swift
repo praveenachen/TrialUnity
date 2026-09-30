@@ -19,6 +19,7 @@ struct WizardScaffold<Content: View>: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
+                BrandHeader()
                 StepProgressView(currentStep: stepNumber, totalSteps: totalSteps)
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.s) {
@@ -38,13 +39,20 @@ struct WizardScaffold<Content: View>: View {
                             .foregroundStyle(Theme.Color.muted)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Theme.Metrics.cardPadding)
+                .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: 16))
 
-                content
+                VStack(alignment: .leading, spacing: Theme.Spacing.l) { content }
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(Theme.Metrics.screenPadding)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(Theme.Color.paper)
+        .background {
+            LinearGradient(colors: [Theme.Color.surface.opacity(0.55), Theme.Color.paper],
+                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+        }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: Theme.Spacing.s) {
                 PrimaryButton(title: continueTitle, isEnabled: isContinueEnabled, action: onContinue)

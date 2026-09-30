@@ -54,6 +54,18 @@ final class SavedTrialsTests: XCTestCase {
         selection.retain(["a"])
         XCTAssertFalse(selection.canCompare)
     }
+    func testSharedBriefUsesPatientReadableRelevance() throws {
+        let recommendation = try result()
+        let record = SavedTrial(id: recommendation.id, title: recommendation.trial.title,
+                                savedAt: nil, source: "sample-data",
+                                profile: PatientProfile(draft: .sample), recommendation: recommendation)
+        let brief = AppointmentBrief.generate([record], context: "Questions for my appointment")
+        XCTAssertTrue(brief.contains("Why it surfaced: \(RelevanceTier(score: recommendation.score).label)"))
+        XCTAssertFalse(brief.contains("Why it surfaced: \(recommendation.explanation.ranking_rationale)"))
+        XCTAssertTrue(brief.contains(record.sourceLink))
+        XCTAssertTrue(brief.contains("Original search condition:"))
+        XCTAssertTrue(brief.contains("Questions for the care team:"))
+    }
     func testMissingEvidenceAndBrief() throws {
         let partial = SavedTrial(id: "NCT00000001", title: nil, savedAt: nil, source: nil, profile: nil, recommendation: nil)
         let fields = SavedTrialPresentation.fields(partial)

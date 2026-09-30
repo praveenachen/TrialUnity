@@ -22,6 +22,7 @@ struct SavedTrialsView: View {
     @State private var selection = TrialSelection()
     @State private var selectionMessage: String?
     @State private var context = ""
+    @State private var openedTrial: SavedTrial?
     private var selected: [SavedTrial] { store.trials.filter { selection.ids.contains($0.id) } }
 
     var body: some View {
@@ -47,29 +48,34 @@ struct SavedTrialsView: View {
                     .foregroundStyle(Theme.Color.muted)
                 }
                 .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: Theme.Spacing.s, leading: Theme.Metrics.screenPadding,
+                                         bottom: Theme.Spacing.s, trailing: Theme.Metrics.screenPadding))
 
                 ForEach(store.trials) { record in
-                    HStack(spacing: Theme.Spacing.s) {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         SelectionCheckRow(isSelected: selection.ids.contains(record.id)) {
                             let accepted = selection.toggle(record.id)
                             selectionMessage = accepted ? nil : "Select no more than 3 trials. Deselect one first."
                             Haptics.selectionChanged()
                         }
-                        .labelStyle(.iconOnly)
-                        .frame(width: Theme.Metrics.minTapTarget, alignment: .center)
+                        .frame(minHeight: Theme.Metrics.minTapTarget, alignment: .leading)
 
-                        if let result = record.recommendation, let profile = record.profile {
-                            NavigationLink {
-                                TrialPassportView(profile: profile, result: result, responseSource: record.source ?? "Unknown")
+                        if record.recommendation != nil, record.profile != nil {
+                            Button {
+                                openedTrial = record
                             } label: {
-                                SavedTrialRow(record: record)
+                                SavedTrialRow(record: record, showsDisclosure: true)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Opens Trial Passport")
                         } else {
                             SavedTrialRow(record: record)
                         }
                     }
                     .listRowInsets(EdgeInsets(top: Theme.Spacing.xs, leading: Theme.Metrics.screenPadding, bottom: Theme.Spacing.xs, trailing: Theme.Metrics.screenPadding))
                     .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: Theme.Spacing.s, leading: Theme.Metrics.screenPadding,
+                                         bottom: Theme.Spacing.s, trailing: Theme.Metrics.screenPadding))
                     .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing) {
                         Button("Remove", systemImage: "trash", role: .destructive) {
@@ -100,11 +106,23 @@ struct SavedTrialsView: View {
                     Text("Appointment brief context")
                 }
                 .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: Theme.Spacing.s, leading: Theme.Metrics.screenPadding,
+                                         bottom: Theme.Spacing.s, trailing: Theme.Metrics.screenPadding))
             }
         }
         .navigationTitle("Saved trials")
+        .navigationDestination(isPresented: Binding(
+            get: { openedTrial != nil },
+            set: { if !$0 { openedTrial = nil } }
+        )) {
+            if let record = openedTrial, let result = record.recommendation, let profile = record.profile {
+                TrialPassportView(profile: profile, result: result, responseSource: record.source ?? "Unknown")
+            }
+        }
         .scrollContentBackground(.hidden)
         .listStyle(.plain)
+        .listRowInsets(EdgeInsets(top: Theme.Spacing.s, leading: Theme.Metrics.screenPadding,
+                                 bottom: Theme.Spacing.s, trailing: Theme.Metrics.screenPadding))
         .background(Theme.Color.paper)
         .onChange(of: store.trials.map(\.id)) { _, ids in selection.retain(Set(ids)) }
         .safeAreaInset(edge: .bottom) {
@@ -125,7 +143,7 @@ struct SavedTrialsView: View {
                 } label: {
                     Text("Compare")
                         .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: Theme.Metrics.minTapTarget)
+                        .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(selection.canCompare ? Theme.Color.accent : Theme.Color.muted)
@@ -138,7 +156,7 @@ struct SavedTrialsView: View {
                     Text("Create brief")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: Theme.Metrics.minTapTarget)
+                        .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
                 }
                 .buttonStyle(.plain)
                 .background(Theme.Color.accent, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
@@ -219,7 +237,7 @@ struct TrialComparisonView: View {
                         Divider()
                     }
                 }
-                .padding(Theme.Spacing.l)
+                .padding(Theme.Metrics.screenPadding)
             }
             .background(Theme.Color.paper)
             .navigationTitle("Compare trials")
@@ -237,6 +255,8 @@ struct TrialComparisonView: View {
 }
 
 struct AppointmentBriefView: View {
+    @Environment(\.recentTrialActivity) private var activity
+    @State private var activityID = UUID()
     let trials: [SavedTrial]
     let context: String
     private var shareText: String { AppointmentBrief.generate(trials, context: context) }
@@ -266,7 +286,7 @@ struct AppointmentBriefView: View {
                     Text("Share appointment brief")
                         .font(.headline)
                         .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
                         .background(Theme.Color.accent, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -275,9 +295,10 @@ struct AppointmentBriefView: View {
                     .font(.caption)
                     .foregroundStyle(Theme.Color.muted)
             }
-            .padding(Theme.Spacing.l)
+            .padding(Theme.Metrics.screenPadding)
         }
         .background(Theme.Color.paper)
+        .onAppear { activity?.recordBrief(activityID) }
         .navigationTitle("Appointment brief")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

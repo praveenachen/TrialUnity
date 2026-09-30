@@ -57,12 +57,12 @@ struct ProfileReviewView: View {
                     )
                 }
             }
-            .padding(Theme.Spacing.l)
+            .padding(Theme.Metrics.screenPadding)
         }
         .background(Theme.Color.paper)
         .safeAreaInset(edge: .bottom) {
             PrimaryButton(title: "Find matching trials", action: onContinue)
-                .padding(.horizontal, Theme.Spacing.l)
+                .padding(.horizontal, Theme.Metrics.screenPadding)
                 .padding(.top, Theme.Spacing.s)
                 .padding(.bottom, Theme.Spacing.m)
                 .background(.bar)

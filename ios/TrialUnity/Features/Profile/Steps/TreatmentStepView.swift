@@ -6,6 +6,7 @@ struct TreatmentStepView: View {
     let onContinue: () -> Void
 
     @State private var newPreference: String = ""
+    @State private var choosingTreatments = false
 
     private let suggestions = ["Immunotherapy", "Chemotherapy", "Targeted therapy", "Surgery", "Radiation therapy"]
 
@@ -27,34 +28,43 @@ struct TreatmentStepView: View {
             onContinue: onContinue
         ) {
             VStack(alignment: .leading, spacing: Theme.Spacing.m) {
-                DecisionAnchor(symbol: "cross.case", caption: "Choose interests, not your medical history.")
-                SelectableRow(title: "No preference", isSelected: draft.interventionPreferences.isEmpty) { draft.interventionPreferences = [] }
-                OutlinedTextField(
-                    placeholder: "Type a treatment and press return",
-                    text: $newPreference,
-                    accessibilityLabelText: "Add a treatment preference"
-                )
-                .onSubmit(addTypedPreference)
+                SelectableRow(title: "No preference", isSelected: draft.interventionPreferences.isEmpty && !choosingTreatments) {
+                    draft.interventionPreferences = []
+                    newPreference = ""
+                    choosingTreatments = false
+                }
+                if !choosingTreatments && draft.interventionPreferences.isEmpty {
+                    Button("Choose treatments") { choosingTreatments = true }
+                        .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                }
+                if choosingTreatments || !draft.interventionPreferences.isEmpty {
+                    OutlinedTextField(
+                        placeholder: "Type a treatment and press return",
+                        text: $newPreference,
+                        accessibilityLabelText: "Add a treatment preference"
+                    )
+                    .onSubmit(addTypedPreference)
 
-                if !draft.interventionPreferences.isEmpty {
-                    FlowLayout(spacing: Theme.Spacing.s) {
-                        ForEach(draft.interventionPreferences, id: \.self) { preference in
-                            TagChip(title: preference) {
-                                draft.removeInterventionPreference(preference)
+                    if !draft.interventionPreferences.isEmpty {
+                        FlowLayout(spacing: Theme.Spacing.s) {
+                            ForEach(draft.interventionPreferences, id: \.self) { preference in
+                                TagChip(title: preference) {
+                                    draft.removeInterventionPreference(preference)
+                                }
                             }
                         }
                     }
-                }
 
-                if !availableSuggestions.isEmpty {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        Text("Suggestions")
-                            .font(.sectionLabel)
-                            .foregroundStyle(Theme.Color.muted)
-                        FlowLayout(spacing: Theme.Spacing.s) {
-                            ForEach(availableSuggestions, id: \.self) { suggestion in
-                                SuggestionChip(title: suggestion) {
-                                    draft.addInterventionPreference(suggestion)
+                    if !availableSuggestions.isEmpty {
+                        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                            Text("Suggestions")
+                                .font(.sectionLabel)
+                                .foregroundStyle(Theme.Color.muted)
+                            FlowLayout(spacing: Theme.Spacing.s) {
+                                ForEach(availableSuggestions, id: \.self) { suggestion in
+                                    SuggestionChip(title: suggestion) {
+                                        draft.addInterventionPreference(suggestion)
+                                    }
                                 }
                             }
                         }

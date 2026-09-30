@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TrialPassportView: View {
+    @Environment(\.recentTrialActivity) private var recentActivity
     let profile: PatientProfile
     let result: TrialRecommendation
     let responseSource: String
@@ -9,11 +10,18 @@ struct TrialPassportView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
                 BrandedSurface {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("\(trial.nct_id) · \(trial.status.capitalized)").font(.caption)
-                        if let phase = trial.phases.first { Text(phase.replacingOccurrences(of: "_", with: " ")).font(.caption) }
+                        FlowLayout(spacing: Theme.Spacing.xs) {
+                            Text(trial.nct_id).font(.caption)
+                            Text("·").font(.caption)
+                            TrialStatusText(status: trial.status)
+                            if let phase = trial.phases.first {
+                                Text("·").font(.caption)
+                                Text(phase.replacingOccurrences(of: "_", with: " ").capitalized).font(.caption)
+                            }
+                        }
                         Text(trial.title).font(.title2.bold())
                         if let sponsor = trial.sponsor { Text(sponsor).font(.caption).foregroundStyle(Theme.Color.muted) }
                         if let location = PatientPresentation.location(trial, near: profile.location) {
@@ -35,7 +43,7 @@ struct TrialPassportView: View {
                         ("Treatment", trial.interventions.first ?? "Not reported"),
                         ("Phase", trial.phases.first ?? "Not reported"),
                         ("Listed site", PatientPresentation.location(trial, near: profile.location) ?? "Not reported"),
-                        ("Status", trial.status.capitalized)
+                        ("Status", trial.status.replacingOccurrences(of: "_", with: " ").capitalized)
                     ])
                 }
                 PassportSection(title: "What to confirm", subtitle: "Before contacting this study") {
@@ -85,9 +93,10 @@ struct TrialPassportView: View {
                         if let source = trial.enrollment_race_source { Text(source) }
                     }.font(.footnote).padding(.top, 8)
                 }
-            }.padding(20)
+            }.padding(Theme.Metrics.screenPadding)
         }
         .background(Theme.Color.paper)
+        .onAppear { recentActivity?.record(result, profile: profile, source: responseSource) }
         .toolbar { SaveTrialButton(result: result, profile: profile, source: responseSource) }
         .navigationTitle("Trial Passport").navigationBarTitleDisplayMode(.inline)
     }

@@ -11,9 +11,12 @@ struct PrimaryButton: View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 50)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, Theme.Spacing.m)
+                .padding(.vertical, Theme.Spacing.s)
+                .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
                 .background(
-                    isEnabled ? Theme.Color.accent : Theme.Color.hairline,
+                    Theme.Color.accent.opacity(isEnabled ? 1 : 0.4),
                     in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous)
                 )
                 .foregroundStyle(.white)

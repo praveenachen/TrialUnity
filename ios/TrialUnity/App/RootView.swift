@@ -1,38 +1,62 @@
 import SwiftUI
 
+/// Splash -> Sign In -> Home. The signed-in content is keyed by the local user, so
+/// switching users rebuilds all per-user state (saved trials, activity, profile draft).
 struct RootView: View {
-    @State private var path: [AppRoute] = []
-    @State private var savedTrials = SavedTrialsStore()
-    @State private var draft = PatientProfileDraft()
-
-    @AppStorage("hasEnteredTrialUnity") private var hasEntered = false
-    @State private var tab = 0
-    @State private var activeSearch: MatchingModel?
-    @State private var matchCount: Int?
+    @State private var session = UserSession()
+    @State private var showsWelcome = true
 
     var body: some View {
         Group {
-            if !hasEntered && savedTrials.trials.isEmpty {
-                WelcomeView { hasEntered = true; tab = 1 }
+            if showsWelcome {
+                WelcomeView { showsWelcome = false }
+            } else if let user = session.user {
+                SignedInRoot(user: user).id(user.storageKey)
             } else {
-                TabView(selection: $tab) {
-                    NavigationStack {
-                        HomeView(draft: draft, count: matchCount, explore: { if activeSearch != nil { path = [.matching] }; tab = 1 }, openSaved: { tab = 2 })
-                    }.tabItem { Label("Home", systemImage: "house") }.tag(0)
-                    NavigationStack(path: $path) {
-                        ConditionStepView(draft: draft, onContinue: { path.append(.profileStep(.age)) })
-                            .navigationDestination(for: AppRoute.self, destination: destination(for:))
-                    }.tabItem { Label("Find", systemImage: "magnifyingglass") }.tag(1)
-                    NavigationStack { SavedTrialsView() }
-                        .tabItem { Label("Saved", systemImage: "bookmark") }.tag(2)
-                }
+                SignInView { session.signIn(name: $0, email: $1) }
             }
         }
+        .environment(session)
+        .tint(Theme.Color.accent)
+    }
+}
+
+private struct SignedInRoot: View {
+    let user: LocalUser
+    @State private var path: [AppRoute] = []
+    @State private var savedTrials: SavedTrialsStore
+    @State private var draft = PatientProfileDraft()
+    @State private var recentActivity: RecentTrialActivity
+    @State private var tab = 0
+    @State private var activeSearch: MatchingModel?
+    @State private var matchCount: Int?
+    private let matchCountKey: String
+
+    init(user: LocalUser) {
+        self.user = user
+        matchCountKey = "trialunity.matchCount.\(user.storageKey)"
+        _matchCount = State(initialValue: UserDefaults.standard.object(forKey: matchCountKey) as? Int)
+        _recentActivity = State(initialValue: RecentTrialActivity(file: RecentTrialActivity.file(forUser: user.storageKey)))
+        _savedTrials = State(initialValue: SavedTrialsStore(file: SavedTrialsStore.file(forUser: user.storageKey)))
+    }
+
+    var body: some View {
+        TabView(selection: $tab) {
+            NavigationStack {
+                HomeView(draft: draft, count: matchCount, explore: { if activeSearch != nil { path = [.matching] }; tab = 1 }, openSaved: { tab = 2 })
+            }.tabItem { Label("Home", systemImage: "house") }.tag(0)
+            NavigationStack(path: $path) {
+                ConditionStepView(draft: draft, onContinue: { path.append(.profileStep(.age)) })
+                    .navigationDestination(for: AppRoute.self, destination: destination(for:))
+            }.tabItem { Label("Find", systemImage: "magnifyingglass") }.tag(1)
+            NavigationStack { SavedTrialsView() }
+                .tabItem { Label("Saved", systemImage: "bookmark") }.tag(2)
+        }
         .environment(savedTrials)
+        .environment(\.recentTrialActivity, recentActivity)
         .alert("Saved trials", isPresented: Binding(get: { savedTrials.message != nil }, set: { if !$0 { savedTrials.message = nil } })) {
             Button("OK") { savedTrials.message = nil }
         } message: { Text(savedTrials.message ?? "") }
-        .tint(Theme.Color.accent)
     }
 
     @ViewBuilder
@@ -49,7 +73,12 @@ struct RootView: View {
                 onContinue: { activeSearch = MatchingModel(profile: PatientProfile(draft: draft)); matchCount = nil; path.append(.matching) }
             )
         case .matching:
-            if let activeSearch { MatchingView(model: activeSearch) { matchCount = $0 } }
+            // Fall back to a model built from the draft: on the first push the route can be
+            // resolved before `activeSearch` is visible, which used to render a blank page.
+            MatchingView(model: activeSearch ?? MatchingModel(profile: PatientProfile(draft: draft))) { count in
+                matchCount = count
+                UserDefaults.standard.set(count, forKey: matchCountKey)
+            }
         }
     }
 

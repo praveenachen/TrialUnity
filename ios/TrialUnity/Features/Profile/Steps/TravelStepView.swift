@@ -16,7 +16,6 @@ struct TravelStepView: View {
             onSkip: isEditing ? nil : onContinue,
             onContinue: onContinue
         ) {
-            DecisionAnchor(symbol: "map", caption: draft.location.isEmpty ? "Think about the journey to a study site." : "Starting from \(draft.location)")
             VStack(spacing: Theme.Spacing.s) {
                 ForEach(TravelPreference.allCases) { option in
                     SelectableRow(title: option.rawValue, isSelected: draft.travelPreference == option) {

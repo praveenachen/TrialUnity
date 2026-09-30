@@ -5,6 +5,8 @@ import SwiftUI
 struct MatchingView: View {
     @State private var model: MatchingModel
     @State private var attempt = 0
+    @State private var openedResult: TrialRecommendation?
+    @State private var openedSource = ""
     var onResultCount: (Int) -> Void = { _ in }
 
     init(model: MatchingModel, onResultCount: @escaping (Int) -> Void) {
@@ -25,7 +27,7 @@ struct MatchingView: View {
         Group {
             switch model.state {
             case .idle, .loading:
-                ScrollView { MatchingFunnelLoadingView() }
+                MatchingFunnelLoadingView(completedSteps: model.completedSteps)
             case .loaded(let response):
                 resultsList(response)
             case .empty:
@@ -38,6 +40,14 @@ struct MatchingView: View {
         .toolbar {
             NavigationLink(destination: SavedTrialsView()) {
                 Label("Saved", systemImage: "bookmark")
+            }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { openedResult != nil },
+            set: { if !$0 { openedResult = nil } }
+        )) {
+            if let result = openedResult {
+                TrialPassportView(profile: model.profile, result: result, responseSource: openedSource)
             }
         }
         .navigationTitle("Matching trials")
@@ -59,7 +69,6 @@ struct MatchingView: View {
             Section {
                 BrandHeader(subtitle: "\(response.results.count) matches for \(model.profile.condition)")
                     .padding(.vertical, Theme.Spacing.xs)
-                MatchingFunnelSummaryView(funnel: response.funnel)
             }
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
@@ -67,12 +76,15 @@ struct MatchingView: View {
 
             Section {
                 ForEach(response.results) { result in
-                    NavigationLink {
-                        TrialPassportView(profile: model.profile, result: result, responseSource: response.source)
+                    Button {
+                        openedSource = response.source
+                        openedResult = result
                     } label: {
                         TrialResultRow(result: result, preferredLocation: model.profile.location)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityHint("Opens Trial Passport")
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .listRowInsets(EdgeInsets(top: Theme.Spacing.xs, leading: Theme.Metrics.screenPadding, bottom: Theme.Spacing.xs, trailing: Theme.Metrics.screenPadding))
                     .swipeActions(edge: .leading) {
                         SaveTrialButton(result: result, profile: model.profile, source: response.source)
@@ -108,7 +120,7 @@ struct MatchingView: View {
                 .foregroundStyle(Theme.Color.muted)
             PrimaryButton(title: "Retry", action: retry)
         }
-        .padding(Theme.Spacing.l)
+        .padding(Theme.Metrics.screenPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -119,7 +131,7 @@ struct MatchingView: View {
                 .foregroundStyle(Theme.Color.ink)
             PrimaryButton(title: "Retry", action: retry)
         }
-        .padding(Theme.Spacing.l)
+        .padding(Theme.Metrics.screenPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

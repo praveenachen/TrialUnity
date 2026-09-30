@@ -15,7 +15,6 @@ struct SexStepView: View {
             isContinueEnabled: draft.isSexValid,
             onContinue: onContinue
         ) {
-            DecisionAnchor(symbol: "person.crop.circle", caption: "Choose the answer you’re comfortable sharing.")
             VStack(spacing: Theme.Spacing.s) {
                 ForEach(SexOption.allCases) { option in
                     SelectableRow(title: option.rawValue, isSelected: draft.sex == option) {

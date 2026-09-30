@@ -15,17 +15,18 @@ struct ConditionStepView: View {
             isContinueEnabled: draft.isConditionValid,
             onContinue: onContinue
         ) {
-            DecisionAnchor(symbol: "magnifyingglass", caption: "Start with one condition. You can refine your search later.")
             OutlinedTextField(
                 placeholder: "e.g. Non-small cell lung cancer",
                 text: $draft.condition,
                 axis: .vertical,
                 accessibilityLabelText: "Condition or diagnosis"
             )
-            Text("Examples").font(.caption).foregroundStyle(Theme.Color.muted)
-            FlowLayout {
-                ForEach(["Lung cancer", "Breast cancer", "Type 2 diabetes"], id: \.self) { example in
-                    SuggestionChip(title: example) { draft.condition = example }
+            VStack(alignment: .leading, spacing: Theme.Spacing.s) {
+                Text("Examples").font(.caption).foregroundStyle(Theme.Color.muted)
+                FlowLayout {
+                    ForEach(["Lung cancer", "Breast cancer", "Type 2 diabetes"], id: \.self) { example in
+                        SuggestionChip(title: example) { draft.condition = example }
+                    }
                 }
             }
         }

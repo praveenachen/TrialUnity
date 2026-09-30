@@ -17,12 +17,10 @@ struct TrialResultRow: View {
         CardContainer(padding: Theme.Spacing.m) {
             VStack(alignment: .leading, spacing: Theme.Spacing.s) {
                 HStack(alignment: .top) {
-                    HStack(spacing: Theme.Spacing.xs) {
+                    FlowLayout(spacing: Theme.Spacing.xs) {
                         ProvenanceText(text: result.trial.nct_id)
                         Text("·").foregroundStyle(Theme.Color.muted)
-                        Text(result.trial.status.capitalized)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(result.trial.status.uppercased() == "RECRUITING" ? Theme.Color.evidence : Theme.Color.muted)
+                        TrialStatusText(status: result.trial.status)
                         if let phase = result.trial.phases.first {
                             Text("·").foregroundStyle(Theme.Color.muted)
                             Text(phase.replacingOccurrences(of: "_", with: " ").capitalized)
@@ -39,11 +37,15 @@ struct TrialResultRow: View {
                     }
                 }
 
-                Text(result.trial.title)
-                    .font(.editorialHeadline)
-                    .foregroundStyle(Theme.Color.ink)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: Theme.Spacing.s) {
+                    Text(result.trial.title)
+                        .font(.editorialHeadline)
+                        .foregroundStyle(Theme.Color.ink)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    CardNavigationArrow()
+                }
 
                 if let location = PatientPresentation.location(result.trial, near: preferredLocation) {
                     Label(location, systemImage: "mappin.and.ellipse")

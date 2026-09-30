@@ -5,15 +5,16 @@ import SwiftUI
 /// on every detail screen, so it reads as identity, not decoration.
 struct BrandMark: View {
     var size: CGFloat = 40
+    var inverted = false
 
     private var safeSize: CGFloat { CGFloat(VisualNumber.dimension(Double(size))) }
 
     var body: some View {
         Text("TU")
             .font(.system(size: safeSize * 0.42, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
+            .foregroundStyle(inverted ? Color(red: 37/255, green: 99/255, blue: 235/255) : .white)
             .frame(width: safeSize, height: safeSize)
-            .background(Theme.Color.accent, in: RoundedRectangle(cornerRadius: safeSize * 0.28, style: .continuous))
+            .background(inverted ? Color.white : Theme.Color.accent, in: RoundedRectangle(cornerRadius: safeSize * 0.28, style: .continuous))
             .accessibilityHidden(true)
     }
 }

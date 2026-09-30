@@ -5,11 +5,12 @@ import SwiftUI
 /// saved-trial rows, and any other "card" surface, so they share one visual
 /// language instead of each view inventing its own.
 struct CardContainer<Content: View>: View {
-    var padding: CGFloat = Theme.Spacing.l
+    var padding: CGFloat = Theme.Metrics.cardPadding
     @ViewBuilder var content: Content
 
     var body: some View {
         content
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
             .background(Theme.Color.paper, in: RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
             .overlay(
@@ -23,11 +24,12 @@ struct CardContainer<Content: View>: View {
 /// the ESR module, so both read as distinctly "TrialUnity," never confused
 /// with the neutral bordered card style above or the experimental-risk module.
 struct BrandedSurface<Content: View>: View {
-    var padding: CGFloat = Theme.Spacing.l
+    var padding: CGFloat = Theme.Metrics.cardPadding
     @ViewBuilder var content: Content
 
     var body: some View {
         content
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
             .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
     }
@@ -39,4 +41,16 @@ struct BrandedSurface<Content: View>: View {
         BrandedSurface { Text("Branded surface content") }
     }
     .padding()
+}
+
+/// A reserved trailing gutter keeps navigation affordances inside card padding.
+struct CardNavigationArrow: View {
+    var body: some View {
+        Image(systemName: "arrow.right")
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(Theme.Color.accent)
+            .frame(width: Theme.Metrics.actionGutter)
+            .frame(minHeight: Theme.Metrics.minTapTarget)
+            .accessibilityHidden(true)
+    }
 }

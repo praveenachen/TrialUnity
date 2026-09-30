@@ -52,7 +52,7 @@ enum Theme {
     }
 
     enum Radius {
-        static let field: CGFloat = 10
+        static let field: CGFloat = 14
         static let control: CGFloat = 14
         /// Bordered card surfaces (result rows, saved rows, branded modules).
         static let card: CGFloat = 16
@@ -65,5 +65,10 @@ enum Theme {
         static let minTapTarget: CGFloat = 44
         /// Standard screen horizontal padding.
         static let screenPadding: CGFloat = 20
+        static let cardPadding: CGFloat = 16
+        static let compactPadding: CGFloat = 12
+        static let sectionSpacing: CGFloat = 24
+        static let buttonHeight: CGFloat = 50
+        static let actionGutter: CGFloat = 28
     }
 }
