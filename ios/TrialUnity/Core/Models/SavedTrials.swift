@@ -160,7 +160,7 @@ enum AppointmentBrief {
             for note in r?.explanation.manual_review_signals ?? [] { lines.append("- \(note)") }
             lines += ["- Full eligibility and current site availability require care-team confirmation.", "Questions for the care team:", "- Does my age meet this study's full eligibility criteria?", "- Would my previous treatment history affect eligibility?", "- Is this site currently accepting participants?", "- Which additional eligibility criteria and tests need review?"]
         }
-        lines += ["", "TrialUnity supports trial navigation and does not determine medical eligibility."]
+        lines += ["", disclaimer]
         return lines.joined(separator: "\n")
     }
 }

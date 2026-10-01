@@ -68,6 +68,7 @@ struct Trial: Codable {
     let minimum_age: String?
     let maximum_age: String?
     let locations: [String]
+    var trial_sites: [TrialSite]? = nil
     let sponsor: String?
     let source_url: String?
     let enrollment_sex_distribution: [String: Double]?

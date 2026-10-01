@@ -27,6 +27,15 @@ struct TrialPassportView: View {
                         if let location = PatientPresentation.location(trial, near: profile.location) {
                             Label(location, systemImage: "mappin.and.ellipse").font(.subheadline)
                         }
+                        Text("\(trial.mapSites.count) study locations")
+                            .font(.caption).foregroundStyle(Theme.Color.muted)
+                        NavigationLink {
+                            TrialLocationsView(trial: trial, profileLocation: profile.location)
+                        } label: {
+                            Label("View trial locations", systemImage: "map")
+                                .frame(minHeight: 44)
+                        }
+
                     }
                 }
                 PassportSection(title: "Your match") {

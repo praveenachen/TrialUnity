@@ -36,6 +36,14 @@ class TrialSearchRequest(BaseModel):
         return phase
 
 
+class TrialSite(BaseModel):
+    facility: str | None = None
+    location: str
+    status: str | None = None
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+
+
 class Trial(BaseModel):
     nct_id: str
     title: str
@@ -49,6 +57,7 @@ class Trial(BaseModel):
     minimum_age: str | None = None
     maximum_age: str | None = None
     locations: list[str] = Field(default_factory=list)
+    trial_sites: list[TrialSite] = Field(default_factory=list)
     sponsor: str | None = None
     source_url: str | None = None
     # Reported participant distributions, represented as non-negative category weights.

@@ -25,6 +25,7 @@ private struct SignedInRoot: View {
     let user: LocalUser
     @State private var path: [AppRoute] = []
     @State private var savedTrials: SavedTrialsStore
+    @State private var appointment: AppointmentStore
     @State private var draft = PatientProfileDraft()
     @State private var recentActivity: RecentTrialActivity
     @State private var tab = 0
@@ -37,6 +38,7 @@ private struct SignedInRoot: View {
         matchCountKey = "trialunity.matchCount.\(user.storageKey)"
         _matchCount = State(initialValue: UserDefaults.standard.object(forKey: matchCountKey) as? Int)
         _recentActivity = State(initialValue: RecentTrialActivity(file: RecentTrialActivity.file(forUser: user.storageKey)))
+        _appointment = State(initialValue: AppointmentStore(file: AppointmentStore.file(forUser: user.storageKey)))
         _savedTrials = State(initialValue: SavedTrialsStore(file: SavedTrialsStore.file(forUser: user.storageKey)))
     }
 
@@ -53,6 +55,7 @@ private struct SignedInRoot: View {
                 .tabItem { Label("Saved", systemImage: "bookmark") }.tag(2)
         }
         .environment(savedTrials)
+        .environment(appointment)
         .environment(\.recentTrialActivity, recentActivity)
         .alert("Saved trials", isPresented: Binding(get: { savedTrials.message != nil }, set: { if !$0 { savedTrials.message = nil } })) {
             Button("OK") { savedTrials.message = nil }

@@ -89,11 +89,25 @@ class ClinicalTrialsClient:
 
         nct_id = identification.get("nctId") or identification.get("NCTId") or "UNKNOWN"
         locations = []
+        trial_sites = []
         for location in contacts.get("locations", []) or []:
             parts = [location.get("city"), location.get("state"), location.get("country")]
             label = ", ".join(part for part in parts if part)
             if label:
                 locations.append(label)
+                point = location.get("geoPoint") or {}
+                def coordinate(value, limit):
+                    try:
+                        number = float(value)
+                        return number if -limit <= number <= limit else None
+                    except (TypeError, ValueError):
+                        return None
+                trial_sites.append({
+                    "facility": location.get("facility"), "location": label,
+                    "status": location.get("status"),
+                    "latitude": coordinate(point.get("lat"), 90),
+                    "longitude": coordinate(point.get("lon"), 180),
+                })
 
         interventions = [
             normalize_space(item.get("name"))
@@ -114,6 +128,7 @@ class ClinicalTrialsClient:
             minimum_age=eligibility.get("minimumAge"),
             maximum_age=eligibility.get("maximumAge"),
             locations=locations,
+            trial_sites=trial_sites,
             sponsor=(sponsor.get("leadSponsor") or {}).get("name"),
             source_url=f"https://clinicaltrials.gov/study/{nct_id}",
             enrollment_sex_distribution=sex_distribution,

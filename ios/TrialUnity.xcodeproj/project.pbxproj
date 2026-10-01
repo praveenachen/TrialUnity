@@ -65,6 +65,10 @@
 		F66D1849F334430883291C48 /* CardContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A714059B704694AD93B73B /* CardContainer.swift */; };
 613094A6C26D42FD80B48034 = {isa = PBXBuildFile; fileRef = 9985CE14919E4410B59A1228; };
 ED8B01A6534B4262A1CCDCA3 = {isa = PBXBuildFile; fileRef = A81E04BF573A4D93AD4018F8; };
+78003B8DDE434E4BA96D053E = {isa = PBXBuildFile; fileRef = 4D5489E7EA8F42FBA7286402; };
+3788EB6E4E894EB091BD5104 = {isa = PBXBuildFile; fileRef = E71B66319A054581923100ED; };
+637A0D3D4EE647CB8816218E = {isa = PBXBuildFile; fileRef = F64E9124303745D094549AA7; };
+E9CC0E12EB15480394368B6A = {isa = PBXBuildFile; fileRef = CF5D8EE3365546219EC9C16D; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -130,6 +134,10 @@ ED8B01A6534B4262A1CCDCA3 = {isa = PBXBuildFile; fileRef = A81E04BF573A4D93AD4018
 		51A714059B704694AD93B73B /* CardContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardContainer.swift; sourceTree = "<group>"; };
 9985CE14919E4410B59A1228 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Models/PatientPresentation.swift; sourceTree = SOURCE_ROOT; };
 A81E04BF573A4D93AD4018F8 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Components/Composition.swift; sourceTree = SOURCE_ROOT; };
+4D5489E7EA8F42FBA7286402 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Models/AppointmentSession.swift; sourceTree = SOURCE_ROOT; };
+E71B66319A054581923100ED = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Core/Models/TrialLocations.swift; sourceTree = SOURCE_ROOT; };
+F64E9124303745D094549AA7 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Features/Appointment/AppointmentModeView.swift; sourceTree = SOURCE_ROOT; };
+CF5D8EE3365546219EC9C16D = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrialUnity/Features/Locations/TrialLocationsView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +154,10 @@ A81E04BF573A4D93AD4018F8 = {isa = PBXFileReference; lastKnownFileType = sourceco
 		E8233FA6D6194484B9E25F21 /* App */ = {
 			isa = PBXGroup;
 			children = (
+CF5D8EE3365546219EC9C16D,
+F64E9124303745D094549AA7,
+E71B66319A054581923100ED,
+4D5489E7EA8F42FBA7286402,
 A81E04BF573A4D93AD4018F8,
 9985CE14919E4410B59A1228,
 				F7EA93683EC446F6B63F198B /* AppRoute.swift */,
@@ -409,6 +421,10 @@ A81E04BF573A4D93AD4018F8,
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+E9CC0E12EB15480394368B6A,
+637A0D3D4EE647CB8816218E,
+3788EB6E4E894EB091BD5104,
+78003B8DDE434E4BA96D053E,
 ED8B01A6534B4262A1CCDCA3,
 613094A6C26D42FD80B48034,
 				0C8D038C28754DD5967B0001 /* AppRoute.swift in Sources */,
@@ -601,6 +617,7 @@ ED8B01A6534B4262A1CCDCA3,
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "TrialUnity/Resources/Info-Debug.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = TrialUnity;
+                INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Use your location to compare trial-site distances and open directions when you request it.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -630,6 +647,7 @@ ED8B01A6534B4262A1CCDCA3,
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = TrialUnity;
+                INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Use your location to compare trial-site distances and open directions when you request it.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

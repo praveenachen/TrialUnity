@@ -1,0 +1,148 @@
+import Foundation
+import Observation
+
+struct AppointmentItem: Codable, Identifiable {
+    let id: String
+    let text: String
+    let isQuestion: Bool
+}
+
+extension AppointmentBrief {
+    static let disclaimer = "TrialUnity supports trial navigation and does not determine medical eligibility."
+
+    static func questions(for trial: SavedTrial) -> [String] {
+        var items = ["Would my previous treatment history affect eligibility?", "Is additional testing required?"]
+        if let location = trial.recommendation?.trial.locations.first {
+            items.insert("Is the \(location) site currently recruiting?", at: 0)
+        }
+        return items
+    }
+
+    static func discussionItems(for trial: SavedTrial) -> [AppointmentItem] {
+        var confirmations = trial.recommendation.map(PatientPresentation.confirmations) ?? ["Full eligibility and site availability"]
+        if let r = trial.recommendation {
+            for key in (r.structured_eligibility?.criteria.keys.sorted() ?? []) {
+                if let criterion = r.structured_eligibility?.criteria[key] {
+                    confirmations.append("\(key.replacingOccurrences(of: "_", with: " ").capitalized): \(criterion.reason)")
+                }
+            }
+            confirmations += r.explanation.eligibility_notes + r.explanation.manual_review_signals
+        }
+        var seen = Set<String>()
+        let unique = confirmations.filter { !$0.isEmpty && seen.insert($0).inserted }
+        return unique.enumerated().map { AppointmentItem(id: "confirm-\($0.offset)", text: $0.element, isQuestion: false) }
+            + questions(for: trial).enumerated().map { AppointmentItem(id: "question-\($0.offset)", text: $0.element, isQuestion: true) }
+    }
+
+    static func summary(_ session: AppointmentSession) -> String {
+        var lines = ["Appointment summary", "Checked means Discussed only; it does not mean eligible, confirmed, or resolved."]
+        for trial in session.trials {
+            lines += ["", "\(trial.displayTitle) (\(trial.id))", "Discussed items:"]
+            let items = discussionItems(for: trial)
+            let discussed = items.filter { session.isDiscussed($0.id, trialID: trial.id) }
+            lines += discussed.isEmpty ? ["None"] : discussed.map { "- \($0.text)" }
+            lines.append("Open items:")
+            let open = items.filter { !session.isDiscussed($0.id, trialID: trial.id) }
+            lines += open.isEmpty ? ["None"] : open.map { "- \($0.text)" }
+            lines += ["User notes:", session.notes[trial.id]?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? session.notes[trial.id]! : "None"]
+        }
+        // Retain the existing evidence, registry links, original context, and disclaimer.
+        lines += ["", generate(session.trials, context: session.context)]
+        return lines.joined(separator: "\n")
+    }
+}
+
+struct AppointmentSession: Codable {
+    let trials: [SavedTrial]
+    let context: String
+    var discussed: [String: Set<String>] = [:]
+    var notes: [String: String] = [:]
+    var currentIndex = 0
+    var reviewedIDs: Set<String> = []
+    var completed = false
+
+    init?(trials: [SavedTrial], context: String) {
+        var seen = Set<String>()
+        let unique = trials.filter { seen.insert($0.id).inserted }
+        guard (1...3).contains(unique.count) else { return nil }
+        self.trials = unique
+        self.context = context
+    }
+    var selectedIDs: [String] { trials.map(\.id) }
+    var isValid: Bool {
+        (1...3).contains(trials.count) && Set(selectedIDs).count == trials.count && trials.indices.contains(currentIndex)
+    }
+    func isDiscussed(_ itemID: String, trialID: String) -> Bool { discussed[trialID]?.contains(itemID) == true }
+    var discussedQuestionCount: Int {
+        trials.reduce(0) { total, trial in
+            total + AppointmentBrief.discussionItems(for: trial).filter { $0.isQuestion && isDiscussed($0.id, trialID: trial.id) }.count
+        }
+    }
+    var remainingQuestionCount: Int {
+        trials.reduce(0) { $0 + AppointmentBrief.questions(for: $1).count } - discussedQuestionCount
+    }
+    /// One note entry per trial; lines/words are not counted as separate notes.
+    var noteCount: Int { trials.filter { !(notes[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count }
+}
+
+@Observable final class AppointmentStore {
+    private(set) var session: AppointmentSession?
+    var message: String?
+    private let file: URL
+    static func file(forUser key: String) -> URL {
+        URL.applicationSupportDirectory.appendingPathComponent("TrialUnity/appointment-\(key).json")
+    }
+    init(file: URL) {
+        self.file = file
+        guard FileManager.default.fileExists(atPath: file.path) else { return }
+        do {
+            let restored = try JSONDecoder().decode(AppointmentSession.self, from: Data(contentsOf: file))
+            guard restored.isValid else { throw CocoaError(.fileReadCorruptFile) }
+            session = restored
+        } catch { message = "The appointment could not be restored. The saved file has not been changed." }
+    }
+    @discardableResult func start(_ trials: [SavedTrial], context: String) -> Bool {
+        guard let value = AppointmentSession(trials: trials, context: context) else {
+            message = "Select 1–3 saved trials."; return false
+        }
+        return persist(value)
+    }
+    func toggle(_ item: AppointmentItem, trialID: String) {
+        update { value in
+            guard let trial = value.trials.first(where: { $0.id == trialID }),
+                  AppointmentBrief.discussionItems(for: trial).contains(where: { $0.id == item.id }) else { return }
+            var items = value.discussed[trialID] ?? []
+            if !items.insert(item.id).inserted { items.remove(item.id) }
+            value.discussed[trialID] = items
+        }
+    }
+    func setNote(_ note: String, trialID: String) {
+        update { if $0.selectedIDs.contains(trialID) { $0.notes[trialID] = note } }
+    }
+    func move(to index: Int) {
+        update { if $0.trials.indices.contains(index) { $0.currentIndex = index } }
+    }
+    func reviewCurrent() { update { $0.reviewedIDs.insert($0.trials[$0.currentIndex].id) } }
+    func complete() {
+        update {
+            $0.reviewedIDs.insert($0.trials[$0.currentIndex].id)
+            if Set($0.selectedIDs).isSubset(of: $0.reviewedIDs) { $0.completed = true }
+        }
+    }
+    func reopen() { update { $0.completed = false } }
+    private func update(_ body: (inout AppointmentSession) -> Void) {
+        guard var value = session else { return }
+        body(&value)
+        _ = persist(value)
+    }
+    @discardableResult private func persist(_ value: AppointmentSession) -> Bool {
+        do {
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(value).write(to: file, options: .atomic)
+            #if os(iOS)
+            try? FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: file.path)
+            #endif
+            session = value; message = nil; return true
+        } catch { message = "Couldn't save appointment changes. Please try again."; return false }
+    }
+}

@@ -19,6 +19,7 @@ struct SaveTrialButton: View {
 
 struct SavedTrialsView: View {
     @Environment(SavedTrialsStore.self) private var store
+    @Environment(AppointmentStore.self) private var appointment
     @State private var selection = TrialSelection()
     @State private var selectionMessage: String?
     @State private var context = ""
@@ -27,6 +28,10 @@ struct SavedTrialsView: View {
 
     var body: some View {
         List {
+            if appointment.session != nil {
+                AppointmentModeEntry(trials: [], context: "")
+                    .listRowBackground(Color.clear)
+            }
             if store.trials.isEmpty {
                 ContentUnavailableView(
                     "No saved trials",
@@ -38,7 +43,7 @@ struct SavedTrialsView: View {
                 Section {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text("\(store.trials.count) trials").font(.title2.bold()).foregroundStyle(Theme.Color.ink)
-                        Text("Select 2\u{2013}3 trials to compare or include in an appointment brief.")
+                        Text("Select 1–3 trials for an appointment, or 2–3 to compare.")
                         if let selectionMessage {
                             Label(selectionMessage, systemImage: "info.circle")
                                 .foregroundStyle(Theme.Color.attention)
@@ -161,6 +166,7 @@ struct SavedTrialsView: View {
                 .buttonStyle(.plain)
                 .background(Theme.Color.accent, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
             }
+            AppointmentModeEntry(trials: selected, context: context, showsResume: false)
         }
         .padding(.horizontal, Theme.Metrics.screenPadding)
         .padding(.top, Theme.Spacing.s)
@@ -278,6 +284,8 @@ struct AppointmentBriefView: View {
                     }
                 }
 
+                AppointmentModeEntry(trials: trials, context: context)
+
                 ForEach(Array(trials.prefix(3).enumerated()), id: \.element.id) { index, trial in
                     AppointmentBriefTrialSection(index: index + 1, trial: trial)
                 }
@@ -291,7 +299,7 @@ struct AppointmentBriefView: View {
                 }
                 .buttonStyle(.plain)
 
-                Text("TrialUnity supports trial navigation and does not determine medical eligibility.")
+                Text(AppointmentBrief.disclaimer)
                     .font(.caption)
                     .foregroundStyle(Theme.Color.muted)
             }
@@ -328,16 +336,7 @@ private struct AppointmentBriefTrialSection: View {
         }
     }
 
-    private var questions: [String] {
-        var items = [
-            "Would my previous treatment history affect eligibility?",
-            "Is additional testing required?",
-        ]
-        if let location = trial.recommendation?.trial.locations.first {
-            items.insert("Is the \(location) site currently recruiting?", at: 0)
-        }
-        return items
-    }
+    private var questions: [String] { AppointmentBrief.questions(for: trial) }
 
     var body: some View {
         CardContainer {
