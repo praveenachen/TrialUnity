@@ -18,7 +18,18 @@ import Observation
     private var loaded = false
     var nearest: ResolvedTrialSite? { SiteDistance.nearest(sites, origin: origin) }
 
-    override init() { super.init(); manager.delegate = self; manager.desiredAccuracy = kCLLocationAccuracyHundredMeters }
+    private let lookup: ((String) async -> SiteCoordinate?)?
+    private let requestAuthorization: (CLLocationManager) -> Void
+    private let requestLocation: (CLLocationManager) -> Void
+
+    init(lookup: ((String) async -> SiteCoordinate?)? = nil,
+         requestAuthorization: @escaping (CLLocationManager) -> Void = { $0.requestWhenInUseAuthorization() },
+         requestLocation: @escaping (CLLocationManager) -> Void = { $0.requestLocation() }) {
+        self.lookup = lookup
+        self.requestAuthorization = requestAuthorization
+        self.requestLocation = requestLocation
+        super.init(); manager.delegate = self; manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    }
 
     func load(trial: Trial, profileLocation: String?) async {
         guard !loaded, !loading else { return }
@@ -40,7 +51,8 @@ import Observation
         loaded = true
     }
     private func resolve(_ address: String) async -> SiteCoordinate? {
-        await cache.resolve(address) { [self] value in
+        if let lookup { return await lookup(address) }
+        return await cache.resolve(address) { [self] value in
             // Serial requests, paced to avoid bursts against CLGeocoder's rate limit.
             do {
                 try await Task.sleep(for: .seconds(1))
@@ -52,10 +64,13 @@ import Observation
         }
     }
     func useCurrentLocation() {
+        useCurrentLocation(status: manager.authorizationStatus)
+    }
+    func useCurrentLocation(status: CLAuthorizationStatus) {
         requestedLocation = true; message = nil
-        switch manager.authorizationStatus {
-        case .notDetermined: locating = true; manager.requestWhenInUseAuthorization()
-        case .authorizedAlways, .authorizedWhenInUse: locating = true; manager.requestLocation()
+        switch status {
+        case .notDetermined: locating = true; requestAuthorization(manager)
+        case .authorizedAlways, .authorizedWhenInUse: locating = true; requestLocation(manager)
         default: denied()
         }
     }
@@ -64,9 +79,12 @@ import Observation
         origin = profileOrigin; originLabel = "Profile: \(label ?? "Not provided")"; message = nil
     }
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        authorizationChanged(manager.authorizationStatus)
+    }
+    func authorizationChanged(_ status: CLAuthorizationStatus) {
         guard requestedLocation else { return }
-        switch manager.authorizationStatus {
-        case .authorizedAlways, .authorizedWhenInUse: manager.requestLocation()
+        switch status {
+        case .authorizedAlways, .authorizedWhenInUse: requestLocation(manager)
         case .denied, .restricted: denied()
         default: break
         }
@@ -80,8 +98,10 @@ import Observation
         }
         origin = SiteCoordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude, precise: true)
         originLabel = "Current location"
+        message = nil
     }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        guard requestedLocation else { return }
         locating = false; message = "Couldn't obtain current location. You can still browse trial locations."
     }
     private func denied() {
@@ -111,12 +131,16 @@ private extension SiteCoordinate {
     var clCoordinate: CLLocationCoordinate2D { .init(latitude: latitude, longitude: longitude) }
 }
 
+#if os(iOS)
 struct TrialLocationsView: View {
     let trial: Trial
     let profileLocation: String?
     @State private var model = TrialLocationModel()
     @State private var selected: Int?
     @State private var camera: MapCameraPosition = .automatic
+    @State private var visibleSiteCount = 20
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    private var listedSites: [ResolvedTrialSite] { model.sites.filter { $0.id != selected } }
 
     var body: some View {
         ScrollView {
@@ -133,32 +157,83 @@ struct TrialLocationsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
                     .accessibilityLabel("Trial locations map. Location details are also listed below.")
                 }
-                if model.loading { ProgressView("Finding trial locations…") }
-                Text(model.originLabel).font(.subheadline)
-                Button("Use my current location", systemImage: "location") { model.useCurrentLocation() }
-                    .frame(minHeight: 44).disabled(model.locating)
-                if model.locating { ProgressView("Finding current location…") }
-                Button("Use profile location") { model.useProfileLocation(profileLocation) }.frame(minHeight: 44)
-                if let message = model.message { Text(message).font(.footnote).foregroundStyle(Theme.Color.muted) }
-                Text("\(trial.mapSites.count) study locations").font(.headline)
-                Text("City-level pins show an area, not an exact facility. Confirm the site address before travel. Distances, when available, are straight-line estimates, not driving distances.")
-                    .font(.caption).foregroundStyle(Theme.Color.muted)
-                if trial.mapSites.isEmpty { Text("No study locations were reported. Check the registry for updates.") }
+                if model.loading { loadingIndicator("Finding trial locations…") }
+
+                CardContainer {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Your starting location").font(.headline)
+                        Text(model.originLabel).font(.subheadline).foregroundStyle(Theme.Color.muted)
+                        let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 10))
+                        layout {
+                            Button { model.useCurrentLocation() } label: {
+                                actionLabel("Current location", symbol: "location.fill")
+                            }.disabled(model.locating)
+                            Button { model.useProfileLocation(profileLocation) } label: {
+                                actionLabel("Profile location", symbol: "person.crop.circle")
+                            }
+                        }.buttonStyle(LocationActionStyle())
+                        if model.locating { loadingIndicator("Finding current location…") }
+                        if let message = model.message {
+                            Text(message).font(.footnote).foregroundStyle(Theme.Color.muted)
+                        }
+                    }
+                }
+
+                Divider()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Study locations").font(.title3.bold())
+                    Text("\(trial.mapSites.count) listed sites").font(.subheadline).foregroundStyle(Theme.Color.muted)
+                    Text("Confirm the site address before travel.").font(.caption).foregroundStyle(Theme.Color.muted)
+                    DisclosureGroup("About pins and distances") {
+                        Text("City pins mark an approximate area. Distances appear only for precise locations and are straight-line estimates, not driving distances.")
+                            .font(.caption).foregroundStyle(Theme.Color.muted).padding(.top, 4)
+                    }.font(.subheadline)
+                }
+                if trial.mapSites.isEmpty {
+                    Text("No locations reported. Check the registry for updates.")
+                        .font(.subheadline).foregroundStyle(Theme.Color.muted)
+                }
                 if let nearest = model.nearest, !model.loading {
-                    Text("Nearest listed site: \(nearest.site.address)").font(.subheadline.weight(.semibold))
+                    Label("Nearest listed site: \(nearest.site.address)", systemImage: "location.circle")
+                        .font(.subheadline.weight(.semibold))
                 }
                 if let selected, let site = model.sites.first(where: { $0.id == selected }) {
+                    Text("Selected site").font(.headline)
                     siteCard(site)
+                    Divider()
                 }
-                ForEach(model.sites.filter { $0.id != selected }) { siteCard($0) }
+                LazyVStack(spacing: 16) {
+                    ForEach(listedSites.prefix(visibleSiteCount)) { siteCard($0) }
+                }
+                if listedSites.count > visibleSiteCount {
+                    Button { visibleSiteCount += 20 } label: {
+                        actionLabel("Load more locations", symbol: "chevron.down")
+                    }.buttonStyle(LocationActionStyle())
+                }
+                Divider()
                 if let url = URL(string: trial.source_url ?? "https://clinicaltrials.gov/study/\(trial.nct_id)") {
-                    Link("View registry locations", destination: url).frame(minHeight: 44)
+                    Link(destination: url) {
+                        actionLabel("View registry locations", symbol: "arrow.up.right.square")
+                    }.buttonStyle(LocationActionStyle())
                 }
             }.padding(Theme.Metrics.screenPadding)
         }
         .background(Theme.Color.paper)
         .navigationTitle("Trial locations").navigationBarTitleDisplayMode(.inline)
         .task { await model.load(trial: trial, profileLocation: profileLocation) }
+    }
+
+    private func loadingIndicator(_ title: String) -> some View {
+        ProgressView(title)
+            .font(.subheadline)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 8)
+    }
+
+    private func actionLabel(_ title: String, symbol: String) -> some View {
+        Label(title, systemImage: symbol)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 44)
     }
 
     private func siteCard(_ site: ResolvedTrialSite) -> some View {
@@ -173,7 +248,9 @@ struct TrialLocationsView: View {
                     if let origin = model.origin, origin.precise, point.precise {
                         Text("About \(origin.meters(to: point) / 1000, specifier: "%.1f") km straight-line").font(.caption)
                     }
-                    Button("Directions", systemImage: "arrow.triangle.turn.up.right.diamond") { model.directions(to: site) }.frame(minHeight: 44)
+                    Button { model.directions(to: site) } label: {
+                        actionLabel("Directions", symbol: "arrow.triangle.turn.up.right.diamond")
+                    }.buttonStyle(LocationActionStyle())
                 } else {
                     Text("Location couldn't be resolved. Check the registry address.").font(.caption).foregroundStyle(Theme.Color.muted)
                 }
@@ -181,3 +258,17 @@ struct TrialLocationsView: View {
         }
     }
 }
+
+private struct LocationActionStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            .background(Theme.Color.accent, in: RoundedRectangle(cornerRadius: Theme.Radius.control))
+            .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.45)
+    }
+}
+#endif

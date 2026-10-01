@@ -9,7 +9,7 @@ struct SelectionCheckRow: View {
     var body: some View {
         Button(action: action) {
             Label(
-                isSelected ? "Selected for comparison" : "Select for comparison",
+                isSelected ? "Selected" : "Select",
                 systemImage: isSelected ? "checkmark.square.fill" : "square"
             )
             .font(.subheadline.weight(.medium))

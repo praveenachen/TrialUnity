@@ -96,6 +96,16 @@ struct LocalUser: Codable, Equatable {
         self.user = user
     }
 
+    /// Name only: the email is the key for this device's per-user data, so it stays fixed.
+    func updateName(_ name: String) {
+        guard let current = user else { return }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let updated = LocalUser(name: trimmed, email: current.email)
+        defaults.set(try? JSONEncoder().encode(updated), forKey: Self.key)
+        user = updated
+    }
+
     func signOut() {
         defaults.removeObject(forKey: Self.key)
         user = nil
@@ -116,40 +126,62 @@ struct SignInView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
-                VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-                    BrandMark(size: 56)
-                    Text("Sign in").font(.largeTitle.bold()).padding(.top, Theme.Spacing.m)
-                    Text("Tell us who you are so your saved trials and activity stay with you on this device.")
-                        .foregroundStyle(Theme.Color.muted)
-                }
-                VStack(alignment: .leading, spacing: Theme.Spacing.l) {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        Text("Name").font(.subheadline.weight(.semibold))
-                        OutlinedTextField(placeholder: "Your name", text: $name)
-                            .textContentType(.name).submitLabel(.next)
-                            .focused($focus, equals: .name)
-                            .onSubmit { focus = .email }
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: Theme.Metrics.sectionSpacing) {
+                    VStack(spacing: Theme.Spacing.s) {
+                        BrandMark(size: 64, color: .white)
+                        Text("Sign in").font(.largeTitle.bold()).padding(.top, Theme.Spacing.s)
+                        Text("Keep your saved trials and activity together on this device.")
+                            .foregroundStyle(.white.opacity(0.9))
+                            .multilineTextAlignment(.center)
                     }
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        Text("Email").font(.subheadline.weight(.semibold))
-                        OutlinedTextField(placeholder: "you@example.com", text: $email, keyboardType: .emailAddress)
-                            .textContentType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .submitLabel(.go)
-                            .focused($focus, equals: .email)
-                            .onSubmit(submit)
+                    .frame(maxWidth: .infinity)
+
+                    VStack(alignment: .leading, spacing: Theme.Spacing.l) {
+                        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                            Text("Name").font(.subheadline.weight(.semibold))
+                            OutlinedTextField(placeholder: "Your name", text: $name)
+                                .foregroundStyle(Theme.Color.ink)
+                                .textContentType(.name).submitLabel(.next)
+                                .focused($focus, equals: .name)
+                                .onSubmit { focus = .email }
+                        }
+                        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                            Text("Email").font(.subheadline.weight(.semibold))
+                            OutlinedTextField(placeholder: "you@example.com", text: $email, keyboardType: .emailAddress)
+                                .foregroundStyle(Theme.Color.ink)
+                                .textContentType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
+                                .submitLabel(.go)
+                                .focused($focus, equals: .email)
+                                .onSubmit(submit)
+                        }
                     }
+                    Button(action: submit) {
+                        Text("Continue")
+                            .font(.headline)
+                            .foregroundStyle(Theme.Color.accent)
+                            .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
+                            .background(.white.opacity(isValid ? 1 : 0.65),
+                                        in: RoundedRectangle(cornerRadius: Theme.Radius.control))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!isValid)
+                    Text("No password or account is created. This stays on your device.")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
                 }
-                PrimaryButton(title: "Continue", isEnabled: isValid, action: submit)
-                Text("No password or account is created. This stays on your device.")
-                    .font(.caption).foregroundStyle(Theme.Color.muted)
+                .frame(maxWidth: 440)
+                .padding(Theme.Metrics.screenPadding)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: geometry.size.height, alignment: .center)
             }
-            .padding(Theme.Metrics.screenPadding)
+            .scrollDismissesKeyboard(.interactively)
         }
-        .scrollDismissesKeyboard(.interactively)
-        .foregroundStyle(Theme.Color.ink)
-        .background(Theme.Color.paper.ignoresSafeArea())
+        .foregroundStyle(.white)
+        .tint(Theme.Color.accent)
+        .background(Theme.Color.accent.ignoresSafeArea())
     }
 
     private func submit() { if isValid { onSignIn(name, email) } }
@@ -205,15 +237,17 @@ extension EnvironmentValues {
 }
 
 struct HomeView: View {
+    @Environment(AppointmentStore.self) private var appointments
+    @Environment(\.openAppointments) private var openAppointments
     @Environment(UserSession.self) private var session
     @Environment(SavedTrialsStore.self) private var saved
     @Environment(\.recentTrialActivity) private var activity
     @State private var openedRecent: SavedTrial?
-    @State private var confirmsSignOut = false
     let draft: PatientProfileDraft
     let count: Int?
     let explore: () -> Void
     let openSaved: () -> Void
+    let openMenu: () -> Void
 
     var body: some View {
         ScrollView {
@@ -235,16 +269,22 @@ struct HomeView: View {
                         .font(.title3.bold())
                         .foregroundStyle(Theme.Color.ink)
                     HStack(alignment: .top, spacing: 10) {
-                        journeyValue(count.map(String.init) ?? "—", label: "Matches",
-                                     icon: "magnifyingglass", detail: "Matching trials\nready",
-                                     colors: [.pink, .purple, .blue])
-                        journeyValue(String(saved.trials.count), label: "Saved",
-                                     icon: "bookmark", detail: "Bookmarked\nfor later",
-                                     colors: [.cyan, .blue, .purple])
-                        journeyValue(String(activity?.briefIDs.count ?? 0), label: "Briefs",
-                                     icon: "doc.text", detail: "Summary ready\nto review",
-                                     colors: [.pink, .purple, .cyan])
-                    }
+                        Button(action: explore) {
+                            journeyValue(count.map(String.init) ?? "—", label: "Matches",
+                                         icon: "magnifyingglass", detail: "View matching\ntrials",
+                                         colors: [.pink, .purple, .blue])
+                        }.accessibilityHint("Opens trial results or trial search")
+                        Button(action: openSaved) {
+                            journeyValue(String(saved.trials.count), label: "Saved",
+                                         icon: "bookmark", detail: "Bookmarked\nfor later",
+                                         colors: [.cyan, .blue, .purple])
+                        }.accessibilityHint("Opens saved trials")
+                        Button(action: openAppointments) {
+                            journeyValue(String(appointments.records.count), label: "Appointments",
+                                         icon: "calendar", detail: "View appointment\nrecords",
+                                         colors: [.pink, .purple, .cyan])
+                        }.accessibilityHint("Opens all appointment records")
+                    }.buttonStyle(.plain)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -339,32 +379,23 @@ struct HomeView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
+                Button(action: openMenu) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+                .accessibilityLabel("Account menu")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: Theme.Spacing.s) {
-                    BrandMark(size: 28, color: .white)
                     Text("TrialUnity")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
+                    BrandMark(size: 28, color: .white)
                 }
                 .accessibilityElement(children: .combine)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    if let user = session.user {
-                        Text(user.name)
-                        Text(user.email)
-                    }
-                    Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) { confirmsSignOut = true }
-                } label: {
-                    Image(systemName: "person.crop.circle")
-                        .foregroundStyle(.white)
-                        .accessibilityLabel("Account")
-                }
-            }
-        }
-        .confirmationDialog("Sign out of TrialUnity?", isPresented: $confirmsSignOut, titleVisibility: .visible) {
-            Button("Sign out", role: .destructive) { session.signOut() }
-        } message: {
-            Text("Your saved trials stay on this device and return when you sign in with the same email.")
         }
     }
 
@@ -400,6 +431,87 @@ struct HomeView: View {
         .accessibilityElement(children: .combine)
     }
 
+}
+
+/// Slide-in account sidebar, opened from the Home account button.
+struct SideMenuView: View {
+    let user: LocalUser
+    let openAppointments: () -> Void
+    let openSaved: () -> Void
+    let openSettings: () -> Void
+    let signOut: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.s) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 48)).foregroundStyle(Theme.Color.accent)
+                Text(user.name).font(.title3.bold()).foregroundStyle(Theme.Color.ink)
+                Text(user.email).font(.subheadline).foregroundStyle(Theme.Color.muted).lineLimit(1)
+            }
+            .padding(.top, 72).padding(.bottom, Theme.Spacing.xl)
+            Divider()
+            row("Appointments", "calendar", openAppointments)
+            row("Saved trials", "bookmark", openSaved)
+            row("Settings", "gearshape", openSettings)
+            Spacer()
+            Divider()
+            row("Sign out", "rectangle.portrait.and.arrow.right", signOut, tint: Theme.Color.conflict)
+                .padding(.bottom, Theme.Spacing.l)
+        }
+        .padding(.horizontal, Theme.Metrics.screenPadding)
+        .frame(width: 290, alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Theme.Color.paper.ignoresSafeArea())
+        .shadow(color: .black.opacity(0.18), radius: 16, x: 4)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func row(_ title: String, _ symbol: String, _ action: @escaping () -> Void, tint: Color = Theme.Color.ink) -> some View {
+        Button(action: action) {
+            HStack(spacing: Theme.Spacing.m) {
+                Image(systemName: symbol).frame(width: 24).foregroundStyle(tint == Theme.Color.ink ? Theme.Color.accent : tint)
+                Text(title).font(.body)
+                Spacer()
+            }
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Local-only settings: the display name shown on Home. The email is fixed because
+/// it keys this device's saved data.
+struct SettingsView: View {
+    @Environment(UserSession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Profile") {
+                    TextField("Name", text: $name).textContentType(.name)
+                    LabeledContent("Email", value: session.user?.email ?? "")
+                }
+                Section {
+                } footer: {
+                    Text("Your name and saved data stay on this device. No account is created.")
+                }
+            }
+            .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { session.updateName(name); dismiss() }
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .onAppear { name = session.user?.name ?? "" }
+        }
+    }
 }
 
 private struct RecentActivityRow: View {

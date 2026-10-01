@@ -74,6 +74,8 @@ struct TrialPassportView: View {
                         }.font(.subheadline)
                     }
                 }
+                AppointmentModeEntry(trials: [SavedTrial(id: trial.nct_id, title: trial.title, savedAt: nil,
+                    source: responseSource, profile: profile, recommendation: result)], context: "")
                 ESRScoreView(esr: result.esr)
                 PassportSection(title: "About this study") {
                     VStack(alignment: .leading, spacing: 12) {
@@ -145,5 +147,6 @@ struct TrialPassportView: View {
             ),
             responseSource: "clinicaltrials.gov"
         ).environment(SavedTrialsStore())
+            .environment(AppointmentStore(file: FileManager.default.temporaryDirectory.appendingPathComponent("passport-preview-appointment.json")))
     }
 }

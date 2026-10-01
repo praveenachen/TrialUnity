@@ -54,7 +54,7 @@ extension AppointmentBrief {
 
 struct AppointmentSession: Codable {
     let trials: [SavedTrial]
-    let context: String
+    var context: String
     var discussed: [String: Set<String>] = [:]
     var notes: [String: String] = [:]
     var currentIndex = 0
@@ -85,8 +85,26 @@ struct AppointmentSession: Codable {
     var noteCount: Int { trials.filter { !(notes[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count }
 }
 
+struct AppointmentRecord: Codable, Identifiable {
+    let id: UUID
+    let createdAt: Date?
+    var updatedAt: Date?
+    var completedAt: Date?
+    var session: AppointmentSession
+}
+
+private struct AppointmentArchive: Codable {
+    var currentID: UUID
+    var records: [AppointmentRecord]
+}
+
 @Observable final class AppointmentStore {
-    private(set) var session: AppointmentSession?
+    private(set) var records: [AppointmentRecord] = []
+    private var currentID: UUID?
+    var session: AppointmentSession? { record()?.session }
+    func record(_ id: UUID? = nil) -> AppointmentRecord? {
+        records.first { $0.id == (id ?? currentID) }
+    }
     var message: String?
     private let file: URL
     static func file(forUser key: String) -> URL {
@@ -96,19 +114,33 @@ struct AppointmentSession: Codable {
         self.file = file
         guard FileManager.default.fileExists(atPath: file.path) else { return }
         do {
-            let restored = try JSONDecoder().decode(AppointmentSession.self, from: Data(contentsOf: file))
-            guard restored.isValid else { throw CocoaError(.fileReadCorruptFile) }
-            session = restored
+            let data = try Data(contentsOf: file)
+            if let archive = try? JSONDecoder().decode(AppointmentArchive.self, from: data) {
+                guard !archive.records.isEmpty,
+                      Set(archive.records.map(\.id)).count == archive.records.count,
+                      archive.records.allSatisfy({ $0.session.isValid }),
+                      archive.records.contains(where: { $0.id == archive.currentID }) else { throw CocoaError(.fileReadCorruptFile) }
+                records = archive.records
+                currentID = archive.currentID
+            } else {
+                let restored = try JSONDecoder().decode(AppointmentSession.self, from: data)
+                guard restored.isValid else { throw CocoaError(.fileReadCorruptFile) }
+                // The old format never recorded dates; do not invent an appointment date.
+                let legacy = AppointmentRecord(id: UUID(), createdAt: nil, updatedAt: nil, completedAt: nil, session: restored)
+                records = [legacy]
+                currentID = legacy.id
+            }
         } catch { message = "The appointment could not be restored. The saved file has not been changed." }
     }
     @discardableResult func start(_ trials: [SavedTrial], context: String) -> Bool {
         guard let value = AppointmentSession(trials: trials, context: context) else {
             message = "Select 1–3 saved trials."; return false
         }
-        return persist(value)
+        let record = AppointmentRecord(id: UUID(), createdAt: Date(), updatedAt: Date(), completedAt: nil, session: value)
+        return persist(records + [record], currentID: record.id)
     }
-    func toggle(_ item: AppointmentItem, trialID: String) {
-        update { value in
+    func toggle(_ item: AppointmentItem, trialID: String, recordID: UUID? = nil) {
+        update(recordID) { value in
             guard let trial = value.trials.first(where: { $0.id == trialID }),
                   AppointmentBrief.discussionItems(for: trial).contains(where: { $0.id == item.id }) else { return }
             var items = value.discussed[trialID] ?? []
@@ -116,33 +148,41 @@ struct AppointmentSession: Codable {
             value.discussed[trialID] = items
         }
     }
-    func setNote(_ note: String, trialID: String) {
-        update { if $0.selectedIDs.contains(trialID) { $0.notes[trialID] = note } }
+    func setContext(_ context: String, recordID: UUID? = nil) {
+        update(recordID) { $0.context = context }
     }
-    func move(to index: Int) {
-        update { if $0.trials.indices.contains(index) { $0.currentIndex = index } }
+    func setNote(_ note: String, trialID: String, recordID: UUID? = nil) {
+        update(recordID) { if $0.selectedIDs.contains(trialID) { $0.notes[trialID] = note } }
     }
-    func reviewCurrent() { update { $0.reviewedIDs.insert($0.trials[$0.currentIndex].id) } }
-    func complete() {
-        update {
+    func move(to index: Int, recordID: UUID? = nil) {
+        update(recordID) { if $0.trials.indices.contains(index) { $0.currentIndex = index } }
+    }
+    func reviewCurrent(recordID: UUID? = nil) { update(recordID) { $0.reviewedIDs.insert($0.trials[$0.currentIndex].id) } }
+    func complete(recordID: UUID? = nil) {
+        update(recordID) {
             $0.reviewedIDs.insert($0.trials[$0.currentIndex].id)
             if Set($0.selectedIDs).isSubset(of: $0.reviewedIDs) { $0.completed = true }
         }
     }
-    func reopen() { update { $0.completed = false } }
-    private func update(_ body: (inout AppointmentSession) -> Void) {
-        guard var value = session else { return }
-        body(&value)
-        _ = persist(value)
+    func reopen(recordID: UUID? = nil) { update(recordID) { $0.completed = false } }
+    private func update(_ id: UUID?, _ body: (inout AppointmentSession) -> Void) {
+        guard let index = records.firstIndex(where: { $0.id == (id ?? currentID) }), let currentID else { return }
+        var values = records
+        let wasCompleted = values[index].session.completed
+        body(&values[index].session)
+        values[index].updatedAt = Date()
+        if values[index].session.completed && !wasCompleted { values[index].completedAt = Date() }
+        if !values[index].session.completed { values[index].completedAt = nil }
+        _ = persist(values, currentID: currentID)
     }
-    @discardableResult private func persist(_ value: AppointmentSession) -> Bool {
+    @discardableResult private func persist(_ values: [AppointmentRecord], currentID: UUID) -> Bool {
         do {
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try JSONEncoder().encode(value).write(to: file, options: .atomic)
+            try JSONEncoder().encode(AppointmentArchive(currentID: currentID, records: values)).write(to: file, options: .atomic)
             #if os(iOS)
             try? FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: file.path)
             #endif
-            session = value; message = nil; return true
+            records = values; self.currentID = currentID; message = nil; return true
         } catch { message = "Couldn't save appointment changes. Please try again."; return false }
     }
 }

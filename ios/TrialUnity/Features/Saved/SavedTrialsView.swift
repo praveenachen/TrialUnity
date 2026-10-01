@@ -19,19 +19,13 @@ struct SaveTrialButton: View {
 
 struct SavedTrialsView: View {
     @Environment(SavedTrialsStore.self) private var store
-    @Environment(AppointmentStore.self) private var appointment
     @State private var selection = TrialSelection()
     @State private var selectionMessage: String?
-    @State private var context = ""
     @State private var openedTrial: SavedTrial?
     private var selected: [SavedTrial] { store.trials.filter { selection.ids.contains($0.id) } }
 
     var body: some View {
         List {
-            if appointment.session != nil {
-                AppointmentModeEntry(trials: [], context: "")
-                    .listRowBackground(Color.clear)
-            }
             if store.trials.isEmpty {
                 ContentUnavailableView(
                     "No saved trials",
@@ -94,25 +88,6 @@ struct SavedTrialsView: View {
                     }
                 }
 
-                Section {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        OutlinedTextField(
-                            placeholder: "Condition or context to share (optional)",
-                            text: $context,
-                            axis: .vertical,
-                            accessibilityLabelText: "Condition or context to share"
-                        )
-                        Text("Saved details may be out of date. Review the brief before sharing; it includes your original search context.")
-                            .font(.caption)
-                            .foregroundStyle(Theme.Color.muted)
-                    }
-                    .padding(.vertical, Theme.Spacing.xs)
-                } header: {
-                    Text("Appointment brief context")
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: Theme.Spacing.s, leading: Theme.Metrics.screenPadding,
-                                         bottom: Theme.Spacing.s, trailing: Theme.Metrics.screenPadding))
             }
         }
         .navigationTitle("Saved trials")
@@ -147,26 +122,12 @@ struct SavedTrialsView: View {
                     TrialComparisonView(trials: selected)
                 } label: {
                     Text("Compare")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(selection.canCompare ? Theme.Color.accent : Theme.Color.muted)
-                .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                .buttonStyle(AppointmentEntryButtonStyle())
                 .disabled(!selection.canCompare)
 
-                NavigationLink {
-                    AppointmentBriefView(trials: selected, context: context)
-                } label: {
-                    Text("Create brief")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
-                }
-                .buttonStyle(.plain)
-                .background(Theme.Color.accent, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                AppointmentModeEntry(trials: selected, context: "")
             }
-            AppointmentModeEntry(trials: selected, context: context, showsResume: false)
         }
         .padding(.horizontal, Theme.Metrics.screenPadding)
         .padding(.top, Theme.Spacing.s)
@@ -284,8 +245,6 @@ struct AppointmentBriefView: View {
                     }
                 }
 
-                AppointmentModeEntry(trials: trials, context: context)
-
                 ForEach(Array(trials.prefix(3).enumerated()), id: \.element.id) { index, trial in
                     AppointmentBriefTrialSection(index: index + 1, trial: trial)
                 }
@@ -309,11 +268,7 @@ struct AppointmentBriefView: View {
         .onAppear { activity?.recordBrief(activityID) }
         .navigationTitle("Appointment brief")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ShareLink(item: shareText) {
-                Label("Share", systemImage: "square.and.arrow.up")
-            }
-        }
+
     }
 }
 

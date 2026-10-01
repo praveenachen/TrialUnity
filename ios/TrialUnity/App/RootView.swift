@@ -23,12 +23,17 @@ struct RootView: View {
 
 private struct SignedInRoot: View {
     let user: LocalUser
+    @Environment(UserSession.self) private var session
+    @State private var showsMenu = false
+    @State private var showsSettings = false
+    @State private var confirmsSignOut = false
     @State private var path: [AppRoute] = []
     @State private var savedTrials: SavedTrialsStore
     @State private var appointment: AppointmentStore
     @State private var draft = PatientProfileDraft()
     @State private var recentActivity: RecentTrialActivity
     @State private var tab = 0
+    @State private var appointmentPath: [UUID] = []
     @State private var activeSearch: MatchingModel?
     @State private var matchCount: Int?
     private let matchCountKey: String
@@ -45,7 +50,7 @@ private struct SignedInRoot: View {
     var body: some View {
         TabView(selection: $tab) {
             NavigationStack {
-                HomeView(draft: draft, count: matchCount, explore: { if activeSearch != nil { path = [.matching] }; tab = 1 }, openSaved: { tab = 2 })
+                HomeView(draft: draft, count: matchCount, explore: { if activeSearch != nil { path = [.matching] }; tab = 1 }, openSaved: { tab = 2 }, openMenu: { withAnimation(.easeInOut(duration: 0.25)) { showsMenu = true } })
             }.tabItem { Label("Home", systemImage: "house") }.tag(0)
             NavigationStack(path: $path) {
                 ConditionStepView(draft: draft, onContinue: { path.append(.profileStep(.age)) })
@@ -53,13 +58,55 @@ private struct SignedInRoot: View {
             }.tabItem { Label("Find", systemImage: "magnifyingglass") }.tag(1)
             NavigationStack { SavedTrialsView() }
                 .tabItem { Label("Saved", systemImage: "bookmark") }.tag(2)
+            NavigationStack(path: $appointmentPath) { AppointmentsView() }
+                .tabItem { Label("Appointments", systemImage: "calendar") }.tag(3)
+        }
+        .overlay { sideMenu }
+        .sheet(isPresented: $showsSettings) { SettingsView() }
+        .confirmationDialog("Sign out of TrialUnity?", isPresented: $confirmsSignOut, titleVisibility: .visible) {
+            Button("Sign out", role: .destructive) { session.signOut() }
+        } message: {
+            Text("Your saved trials stay on this device and return when you sign in with the same email.")
         }
         .environment(savedTrials)
         .environment(appointment)
+        .environment(\.openAppointments, {
+            appointmentPath = []
+            tab = 3
+        })
+        .environment(\.openAppointmentDetails, { id in
+            appointmentPath = [id]
+            tab = 3
+        })
         .environment(\.recentTrialActivity, recentActivity)
         .alert("Saved trials", isPresented: Binding(get: { savedTrials.message != nil }, set: { if !$0 { savedTrials.message = nil } })) {
             Button("OK") { savedTrials.message = nil }
         } message: { Text(savedTrials.message ?? "") }
+    }
+
+    private func closeMenu(then action: (() -> Void)? = nil) {
+        withAnimation(.easeInOut(duration: 0.25)) { showsMenu = false }
+        action?()
+    }
+
+    @ViewBuilder private var sideMenu: some View {
+        if showsMenu {
+            ZStack(alignment: .leading) {
+                Color.black.opacity(0.35).ignoresSafeArea()
+                    .onTapGesture { closeMenu() }
+                    .accessibilityLabel("Close menu").accessibilityAddTraits(.isButton)
+                    .transition(.opacity)
+                SideMenuView(
+                    user: user,
+                    openAppointments: { closeMenu { tab = 3 } },
+                    openSaved: { closeMenu { tab = 2 } },
+                    openSettings: { closeMenu { showsSettings = true } },
+                    signOut: { closeMenu { confirmsSignOut = true } }
+                )
+                .transition(.move(edge: .leading))
+                .gesture(DragGesture().onEnded { if $0.translation.width < -40 { closeMenu() } })
+            }
+        }
     }
 
     @ViewBuilder
