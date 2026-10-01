@@ -26,6 +26,8 @@ private struct SignedInRoot: View {
     @Environment(UserSession.self) private var session
     @State private var showsMenu = false
     @State private var showsSettings = false
+    @State private var showsHistory = false
+    @State private var history: SearchHistoryStore
     @State private var confirmsSignOut = false
     @State private var path: [AppRoute] = []
     @State private var savedTrials: SavedTrialsStore
@@ -44,17 +46,19 @@ private struct SignedInRoot: View {
         _matchCount = State(initialValue: UserDefaults.standard.object(forKey: matchCountKey) as? Int)
         _recentActivity = State(initialValue: RecentTrialActivity(file: RecentTrialActivity.file(forUser: user.storageKey)))
         _appointment = State(initialValue: AppointmentStore(file: AppointmentStore.file(forUser: user.storageKey)))
+        _history = State(initialValue: SearchHistoryStore(file: SearchHistoryStore.file(forUser: user.storageKey)))
         _savedTrials = State(initialValue: SavedTrialsStore(file: SavedTrialsStore.file(forUser: user.storageKey)))
     }
 
     var body: some View {
         TabView(selection: $tab) {
             NavigationStack {
-                HomeView(draft: draft, count: matchCount, explore: { if activeSearch != nil { path = [.matching] }; tab = 1 }, openSaved: { tab = 2 }, openMenu: { withAnimation(.easeInOut(duration: 0.25)) { showsMenu = true } })
+                HomeView(draft: draft, count: matchCount, explore: startNewSearch, openSaved: { tab = 2 }, openLatestSearch: openLatestSearch, openMenu: { withAnimation(.easeInOut(duration: 0.25)) { showsMenu = true } })
             }.tabItem { Label("Home", systemImage: "house") }.tag(0)
             NavigationStack(path: $path) {
                 ConditionStepView(draft: draft, onContinue: { path.append(.profileStep(.age)) })
                     .navigationDestination(for: AppRoute.self, destination: destination(for:))
+                    .toolbar { Button("History", systemImage: "clock.arrow.circlepath") { showsHistory = true } }
             }.tabItem { Label("Find", systemImage: "magnifyingglass") }.tag(1)
             NavigationStack { SavedTrialsView() }
                 .tabItem { Label("Saved", systemImage: "bookmark") }.tag(2)
@@ -62,12 +66,19 @@ private struct SignedInRoot: View {
                 .tabItem { Label("Appointments", systemImage: "calendar") }.tag(3)
         }
         .overlay { sideMenu }
+        .sheet(isPresented: $showsHistory) {
+            NavigationStack {
+                SearchHistoryView()
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { showsHistory = false } } }
+            }
+        }
         .sheet(isPresented: $showsSettings) { SettingsView() }
         .confirmationDialog("Sign out of TrialUnity?", isPresented: $confirmsSignOut, titleVisibility: .visible) {
             Button("Sign out", role: .destructive) { session.signOut() }
         } message: {
             Text("Your saved trials stay on this device and return when you sign in with the same email.")
         }
+        .environment(history)
         .environment(savedTrials)
         .environment(appointment)
         .environment(\.openAppointments, {
@@ -82,6 +93,23 @@ private struct SignedInRoot: View {
         .alert("Saved trials", isPresented: Binding(get: { savedTrials.message != nil }, set: { if !$0 { savedTrials.message = nil } })) {
             Button("OK") { savedTrials.message = nil }
         } message: { Text(savedTrials.message ?? "") }
+    }
+
+    /// Home "Find trials": always a fresh search from the first step.
+    private func startNewSearch() {
+        draft = PatientProfileDraft()
+        activeSearch = nil
+        path = []
+        tab = 1
+    }
+
+    /// Home "Matches": the most recent search's results (this session's, else the latest saved in history).
+    private func openLatestSearch() {
+        if activeSearch == nil, let record = history.records.first {
+            activeSearch = MatchingModel(snapshot: record)
+        }
+        if activeSearch != nil { path = [.matching] }
+        tab = 1
     }
 
     private func closeMenu(then action: (() -> Void)? = nil) {
@@ -100,6 +128,7 @@ private struct SignedInRoot: View {
                     user: user,
                     openAppointments: { closeMenu { tab = 3 } },
                     openSaved: { closeMenu { tab = 2 } },
+                    openHistory: { closeMenu { showsHistory = true } },
                     openSettings: { closeMenu { showsSettings = true } },
                     signOut: { closeMenu { confirmsSignOut = true } }
                 )

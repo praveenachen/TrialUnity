@@ -78,37 +78,53 @@ struct AppointmentModeEntry: View {
 
 struct AppointmentsView: View {
     @Environment(AppointmentStore.self) private var store
+    @State private var deletingID: UUID?
 
     var body: some View {
         List {
-            if store.records.isEmpty {
-                ContentUnavailableView("No appointments yet", systemImage: "calendar", description: Text("Select trials in Saved or open a trial passport to start Appointment Mode."))
-            }
             ForEach(store.records.reversed()) { record in
-                NavigationLink(value: record.id) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(record.session.context.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Appointment" : record.session.context)
-                            .font(.headline)
-                        Text(record.session.completed ? "Completed" : "In progress")
-                            .font(.subheadline).foregroundStyle(Theme.Color.accent)
-                        if let date = record.createdAt {
-                            Text("Started \(date.formatted(date: .abbreviated, time: .shortened))")
-                        } else { Text("Start date not recorded") }
-                        if let date = record.completedAt {
-                            Text("Completed \(date.formatted(date: .abbreviated, time: .shortened))")
-                        } else if let date = record.updatedAt {
-                            Text("Updated \(date.formatted(date: .abbreviated, time: .shortened))")
-                        }
-                        Text(record.session.trials.map(\.displayTitle).joined(separator: " · "))
-                            .lineLimit(2)
-                    }.font(.caption).padding(.vertical, 4)
+                HStack(spacing: 8) {
+                    Button(role: .destructive) { deletingID = record.id } label: {
+                        Image(systemName: "trash")
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Delete appointment \(record.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "date not recorded")")
+                    NavigationLink(value: record.id) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(record.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "Date not recorded")
+                                .font(.headline)
+                            Text(record.session.completed ? "Completed" : "In progress")
+                                .font(.subheadline).foregroundStyle(Theme.Color.accent)
+                            if let date = record.updatedAt ?? record.completedAt ?? record.createdAt {
+                                Text("Last Updated \(date.formatted(date: .abbreviated, time: .shortened))")
+                            } else { Text("Last Updated: Not recorded") }
+                            Text(record.session.trials.map(\.displayTitle).joined(separator: " · "))
+                                .lineLimit(2)
+                        }.font(.caption).padding(.vertical, 4)
+                    }
                 }
             }
             if let message = store.message { Text(message).foregroundStyle(Theme.Color.attention) }
         }
         .scrollContentBackground(.hidden)
         .background(Theme.Color.paper)
+        .overlay {
+            if store.records.isEmpty {
+                ContentUnavailableView("No appointments", systemImage: "calendar",
+                                       description: Text("Select saved trials to start one."))
+            }
+        }
         .navigationTitle("Appointments")
+        .confirmationDialog("Delete this appointment?", isPresented: Binding(
+            get: { deletingID != nil }, set: { if !$0 { deletingID = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete appointment", role: .destructive) {
+                if let id = deletingID { store.delete(id) }
+                deletingID = nil
+            }
+            Button("Cancel", role: .cancel) { deletingID = nil }
+        } message: { Text("This removes its notes and discussion history from this device.") }
         .navigationDestination(for: UUID.self) { AppointmentDetailsView(recordID: $0) }
     }
 }
@@ -134,8 +150,6 @@ struct AppointmentModeView: View {
                         Text("Trial \(session.currentIndex + 1) of \(session.trials.count)").font(.headline)
                         ProvenanceText(text: trial.id)
                         Text(trial.displayTitle).font(.title2.bold())
-                        Text("Checked means Discussed only—not eligible, confirmed, or resolved.")
-                            .font(.caption).foregroundStyle(Theme.Color.muted)
                         discussionBlock("Things to confirm", trial: trial, questions: false, session: session)
                         discussionBlock("Questions to ask", trial: trial, questions: true, session: session)
                         Text("Notes").font(.headline)
@@ -195,7 +209,7 @@ struct AppointmentModeView: View {
                             Spacer(minLength: 0)
                         }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     .accessibilityLabel(item.text)
                     .accessibilityValue(checked ? "Discussed" : "Not discussed")
                     .accessibilityHint("Double tap to toggle discussion status only")
@@ -207,8 +221,6 @@ struct AppointmentModeView: View {
         VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Appointment Summary").font(.title2.bold())
-                Text("Saved in Appointments. You can return to your notes and discussion details anytime.")
-                    .font(.subheadline).foregroundStyle(Theme.Color.muted)
             }
             CardContainer {
                 VStack(alignment: .leading, spacing: 12) {
@@ -274,8 +286,6 @@ struct AppointmentDetailsView: View {
                         }
                     }.buttonStyle(AppointmentActionStyle())
                     Text("Discussion summary").font(.title3.bold())
-                    Text("Discussed does not mean eligible, confirmed, or resolved.")
-                        .font(.caption).foregroundStyle(Theme.Color.muted)
                     ForEach(record.session.trials) { trial in
                         AppointmentTrialSummary(trial: trial, session: record.session)
                     }

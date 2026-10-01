@@ -14,11 +14,11 @@ struct AgeStepView: View {
             stepNumber: ProfileStep.age.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "How old are you?",
-            subtitle: "Age helps us check eligibility criteria before matching.",
             continueTitle: isEditing ? "Save" : "Continue",
             isContinueEnabled: draft.isAgeValid,
             onContinue: onContinue
         ) {
+            ScanSuggestionModule(draft: draft, field: .age)
             BrandedSurface {
                 VStack(alignment: .leading, spacing: Theme.Spacing.s) {
                     HStack(spacing: Theme.Spacing.m) {

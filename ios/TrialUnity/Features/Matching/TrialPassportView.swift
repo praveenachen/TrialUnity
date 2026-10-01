@@ -55,7 +55,7 @@ struct TrialPassportView: View {
                         ("Status", trial.status.replacingOccurrences(of: "_", with: " ").capitalized)
                     ])
                 }
-                PassportSection(title: "What to confirm", subtitle: "Before contacting this study") {
+                PassportSection(title: "What to confirm") {
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(PatientPresentation.confirmations(result), id: \.self) { item in
                             Label(item, systemImage: "exclamationmark.circle").font(.subheadline)

@@ -8,6 +8,7 @@ final class MatchingModel {
     }
     private(set) var state: State = .idle
     private(set) var source: String?
+    private(set) var historyRecord: SearchHistoryRecord?
     /// Checklist steps finished so far, 0...stepCount. Reaches stepCount only once the request succeeds.
     private(set) var completedSteps = 0
     let profile: PatientProfile
@@ -25,6 +26,13 @@ final class MatchingModel {
         self.client = client
         self.paceInterval = paceInterval
         self.completionPause = completionPause
+    }
+
+    convenience init(snapshot: SearchHistoryRecord) {
+        self.init(profile: snapshot.profile)
+        source = snapshot.response.source
+        completedSteps = Self.stepCount
+        state = snapshot.response.results.isEmpty ? .empty : .loaded(snapshot.response)
     }
 
     /// Maps the backend's real stages to checklist steps. Stage 1 = studies found;
@@ -63,6 +71,7 @@ final class MatchingModel {
             completedSteps = Self.stepCount
             try? await Task.sleep(for: completionPause)
             try Task.checkCancellation()
+            historyRecord = SearchHistoryRecord(id: UUID(), date: Date(), profile: profile, response: response)
             source = response.source
             state = response.results.isEmpty ? .empty : .loaded(response)
         } catch is CancellationError {

@@ -26,14 +26,7 @@ struct SavedTrialsView: View {
 
     var body: some View {
         List {
-            if store.trials.isEmpty {
-                ContentUnavailableView(
-                    "No saved trials",
-                    systemImage: "bookmark",
-                    description: Text("Save trials from your results or Trial Passport to revisit them here.")
-                )
-                .listRowBackground(Theme.Color.paper)
-            } else {
+            if !store.trials.isEmpty {
                 Section {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text("\(store.trials.count) trials").font(.title2.bold()).foregroundStyle(Theme.Color.ink)
@@ -65,7 +58,7 @@ struct SavedTrialsView: View {
                             } label: {
                                 SavedTrialRow(record: record, showsDisclosure: true)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                             .accessibilityHint("Opens Trial Passport")
                         } else {
                             SavedTrialRow(record: record)
@@ -88,6 +81,12 @@ struct SavedTrialsView: View {
                     }
                 }
 
+            }
+        }
+        .overlay {
+            if store.trials.isEmpty {
+                ContentUnavailableView("No saved trials", systemImage: "bookmark",
+                                       description: Text("Save trials from your results."))
             }
         }
         .navigationTitle("Saved trials")
@@ -156,10 +155,6 @@ struct TrialComparisonView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
-                    Text("Snapshots from original searches. Relevance may reflect different profiles. ESR evidence and experimental predictions stay separate below.")
-                        .font(.caption)
-                        .foregroundStyle(Theme.Color.muted)
-
                     BrandedSurface {
                         VStack(alignment: .leading, spacing: Theme.Spacing.m) {
                             ForEach(Array(trials.enumerated()), id: \.element.id) { index, trial in
@@ -256,7 +251,7 @@ struct AppointmentBriefView: View {
                         .frame(maxWidth: .infinity, minHeight: Theme.Metrics.buttonHeight)
                         .background(Theme.Color.accent, in: RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Text(AppointmentBrief.disclaimer)
                     .font(.caption)

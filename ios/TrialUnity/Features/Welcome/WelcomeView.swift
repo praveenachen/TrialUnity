@@ -7,6 +7,7 @@ struct WelcomeView: View {
     @State private var logo = false
     @State private var wordmark = false
     @State private var button = false
+    @State private var spotlight = false
 
     private let splashBlue = Color(red: 0, green: 68/255, blue: 245/255)
 
@@ -37,7 +38,7 @@ struct WelcomeView: View {
                         .background(.white, in: Capsule())
                         .contentShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .padding(.bottom, compact ? 30 : 40)
                 .opacity(button ? 1 : 0)
             }
@@ -45,20 +46,27 @@ struct WelcomeView: View {
             .background {
                 RadialGradient(
                     colors: [Color(red: 0, green: 112/255, blue: 1), splashBlue],
-                    center: UnitPoint(x: 0.5, y: 0.43),
+                    center: UnitPoint(x: spotlight ? 0.65 : 0.35, y: spotlight ? 0.32 : 0.52),
                     startRadius: 0,
-                    endRadius: geometry.size.height * 0.48
+                    endRadius: CGFloat(VisualNumber.dimension(Double(geometry.size.height))) * 0.48
                 )
                 .ignoresSafeArea()
             }
         }
         .environment(\.colorScheme, .dark)
         .onAppear(perform: play)
+        .onChange(of: reduceMotion) { _, reduced in
+            if reduced {
+                var transaction = Transaction(); transaction.disablesAnimations = true
+                withTransaction(transaction) { spotlight = false; logo = true; wordmark = true; button = true }
+            } else { play() }
+        }
     }
 
     private func play() {
         guard !reduceMotion else { logo = true; wordmark = true; button = true; return }
-        withAnimation(.easeOut(duration: 0.45)) { logo = true }
+        withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) { spotlight = true }
+        withAnimation(.easeOut(duration: 0.8)) { logo = true }
         withAnimation(.easeOut(duration: 0.35).delay(0.15)) { wordmark = true }
         withAnimation(.easeOut(duration: 0.3).delay(0.3)) { button = true }
     }
@@ -132,9 +140,6 @@ struct SignInView: View {
                     VStack(spacing: Theme.Spacing.s) {
                         BrandMark(size: 64, color: .white)
                         Text("Sign in").font(.largeTitle.bold()).padding(.top, Theme.Spacing.s)
-                        Text("Keep your saved trials and activity together on this device.")
-                            .foregroundStyle(.white.opacity(0.9))
-                            .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
 
@@ -165,17 +170,13 @@ struct SignInView: View {
                             .background(.white.opacity(isValid ? 1 : 0.65),
                                         in: RoundedRectangle(cornerRadius: Theme.Radius.control))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     .disabled(!isValid)
-                    Text("No password or account is created. This stays on your device.")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: 440)
                 .padding(Theme.Metrics.screenPadding)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: geometry.size.height, alignment: .center)
+                .frame(minHeight: CGFloat(VisualNumber.dimension(Double(geometry.size.height))), alignment: .center)
             }
             .scrollDismissesKeyboard(.interactively)
         }
@@ -247,6 +248,7 @@ struct HomeView: View {
     let count: Int?
     let explore: () -> Void
     let openSaved: () -> Void
+    let openLatestSearch: () -> Void
     let openMenu: () -> Void
 
     var body: some View {
@@ -262,29 +264,29 @@ struct HomeView: View {
                     .padding(.horizontal, 16).frame(minHeight: 48)
                     .foregroundStyle(Theme.Color.accent)
                     .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: 14))
-                }.buttonStyle(.plain)
+                }.buttonStyle(.pressable)
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Your trial journey")
                         .font(.title3.bold())
                         .foregroundStyle(Theme.Color.ink)
                     HStack(alignment: .top, spacing: 10) {
-                        Button(action: explore) {
-                            journeyValue(count.map(String.init) ?? "—", label: "Matches",
+                        Button(action: openLatestSearch) {
+                            journeyValue(count.flatMap { $0 > 0 ? String($0) : nil } ?? "", label: "Matches",
                                          icon: "magnifyingglass", detail: "View matching\ntrials",
                                          colors: [.pink, .purple, .blue])
-                        }.accessibilityHint("Opens trial results or trial search")
+                        }.accessibilityHint("Opens your most recent search")
                         Button(action: openSaved) {
-                            journeyValue(String(saved.trials.count), label: "Saved",
+                            journeyValue(saved.trials.isEmpty ? "" : String(saved.trials.count), label: "Saved",
                                          icon: "bookmark", detail: "Bookmarked\nfor later",
                                          colors: [.cyan, .blue, .purple])
                         }.accessibilityHint("Opens saved trials")
                         Button(action: openAppointments) {
-                            journeyValue(String(appointments.records.count), label: "Appointments",
-                                         icon: "calendar", detail: "View appointment\nrecords",
+                            journeyValue(appointments.records.isEmpty ? "" : String(appointments.records.count), label: "Briefs",
+                                         icon: "doc.text", detail: "Summary ready\nto review",
                                          colors: [.pink, .purple, .cyan])
                         }.accessibilityHint("Opens all appointment records")
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.pressable)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -352,15 +354,13 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(session.user.map { "Welcome, \($0.firstName)" } ?? "Welcome")
                     .font(.largeTitle.bold())
-                Text("Here’s where you left off.")
-                    .foregroundStyle(.white.opacity(0.85))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Theme.Metrics.screenPadding)
             .padding(.top, 16)
             .padding(.bottom, 28)
-            .background(Color(red: 37/255, green: 99/255, blue: 235/255))
+            .background(Color(red: 37/255, green: 99/255, blue: 235/255).ignoresSafeArea(edges: .top))
         }
         .foregroundStyle(Theme.Color.ink)
         .tint(Theme.Color.accent)
@@ -374,8 +374,8 @@ struct HomeView: View {
             }
         }
         .navigationTitle("").navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color(red: 37/255, green: 99/255, blue: 235/255), for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        // Transparent bar over the blue header block, so there is no seam between them.
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -409,18 +409,13 @@ struct HomeView: View {
                 .frame(height: 54)
                 .padding(.bottom, 12)
                 .accessibilityHidden(true)
-            Text("\(value) \(label)")
+            Text(value.isEmpty ? label : "\(value) \(label)")
                 .font(.subheadline.bold())
                 .monospacedDigit()
                 .foregroundStyle(Theme.Color.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(Theme.Color.muted)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 6)
+
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
@@ -438,6 +433,7 @@ struct SideMenuView: View {
     let user: LocalUser
     let openAppointments: () -> Void
     let openSaved: () -> Void
+    let openHistory: () -> Void
     let openSettings: () -> Void
     let signOut: () -> Void
 
@@ -453,6 +449,7 @@ struct SideMenuView: View {
             Divider()
             row("Appointments", "calendar", openAppointments)
             row("Saved trials", "bookmark", openSaved)
+            row("Search history", "clock.arrow.circlepath", openHistory)
             row("Settings", "gearshape", openSettings)
             Spacer()
             Divider()
@@ -478,7 +475,7 @@ struct SideMenuView: View {
             .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -495,10 +492,6 @@ struct SettingsView: View {
                 Section("Profile") {
                     TextField("Name", text: $name).textContentType(.name)
                     LabeledContent("Email", value: session.user?.email ?? "")
-                }
-                Section {
-                } footer: {
-                    Text("Your name and saved data stay on this device. No account is created.")
                 }
             }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
@@ -535,7 +528,7 @@ private struct RecentActivityRow: View {
                 .foregroundStyle(Theme.Color.ink)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 .padding(.vertical, 14).contentShape(Rectangle())
-            }.buttonStyle(.plain)
+            }.buttonStyle(.pressable)
         } else if let result = record.recommendation, let profile = record.profile {
             Button(action: onOpen) {
                 HStack(spacing: 12) {
@@ -562,7 +555,7 @@ private struct RecentActivityRow: View {
                 .foregroundStyle(Theme.Color.ink)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 .padding(.vertical, 14).contentShape(Rectangle())
-            }.buttonStyle(.plain)
+            }.buttonStyle(.pressable)
             .accessibilityHint(showsSavedMark ? "Opens Trial Passport" : "Opens saved trials")
         }
     }
@@ -584,8 +577,6 @@ private struct RecentActivityView: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
-            } footer: {
-                Text("Your 20 most recently viewed trials.")
             }
         }
         .listStyle(.plain)

@@ -54,3 +54,21 @@ struct CardNavigationArrow: View {
             .accessibilityHidden(true)
     }
 }
+
+/// Shared pressed-state feedback for tappable cards, tiles, rows and buttons:
+/// a slight shrink and dim while a finger is down, springing back on release.
+/// Replaces `.plain`, which gives no visual response to a tap.
+struct PressableButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressableButtonStyle {
+    static var pressable: PressableButtonStyle { PressableButtonStyle() }
+}

@@ -27,7 +27,7 @@ struct SelectableRow: View {
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }

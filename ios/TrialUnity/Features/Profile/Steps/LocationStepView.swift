@@ -10,7 +10,6 @@ struct LocationStepView: View {
             stepNumber: ProfileStep.location.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "Where are you located?",
-            subtitle: "City and state or country is enough to find nearby trial sites.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,
@@ -27,7 +26,6 @@ struct LocationStepView: View {
                     Text("Not specified").tag(TravelPreference?.none)
                     ForEach(TravelPreference.allCases) { option in Text(option.rawValue).tag(Optional(option)) }
                 }.pickerStyle(.menu)
-                Text("Saved with your profile; not used to filter trials yet.").font(.caption).foregroundStyle(Theme.Color.muted)
             }.frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Metrics.cardPadding)
                 .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.card))

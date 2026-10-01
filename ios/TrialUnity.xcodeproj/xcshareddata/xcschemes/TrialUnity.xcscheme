@@ -50,6 +50,13 @@
             ReferencedContainer = "container:TrialUnity.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "TRIALUNITY_API_BASE_URL"
+            value = "http://10.0.0.4:8001"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

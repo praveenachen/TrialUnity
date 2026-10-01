@@ -10,7 +10,6 @@ struct SexStepView: View {
             stepNumber: ProfileStep.sex.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "What is your sex?",
-            subtitle: "Some trials have sex-specific eligibility criteria.",
             continueTitle: isEditing ? "Save" : "Continue",
             isContinueEnabled: draft.isSexValid,
             onContinue: onContinue

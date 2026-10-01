@@ -22,7 +22,7 @@ struct PrimaryButton: View {
                 .foregroundStyle(.white)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .disabled(!isEnabled)
     }
 }

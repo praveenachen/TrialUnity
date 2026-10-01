@@ -20,7 +20,7 @@ struct SecondaryButton: View {
                 )
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

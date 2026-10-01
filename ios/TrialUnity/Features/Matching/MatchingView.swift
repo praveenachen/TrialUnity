@@ -3,6 +3,7 @@ import SwiftUI
 /// The results experience: a real retrieval-funnel summary followed by a
 /// deliberate shortlist. Tapping a result pushes the full-screen Trial Passport.
 struct MatchingView: View {
+    @Environment(SearchHistoryStore.self) private var history
     @State private var model: MatchingModel
     @State private var attempt = 0
     @State private var openedResult: TrialRecommendation?
@@ -54,6 +55,7 @@ struct MatchingView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task(id: attempt) {
             await model.load()
+            if let record = model.historyRecord { history.record(id: record.id, profile: record.profile, response: record.response) }
             if case .loaded(let response) = model.state { onResultCount(response.results.count) }
             if case .empty = model.state { onResultCount(0) }
         }
@@ -74,7 +76,7 @@ struct MatchingView: View {
                     } label: {
                         TrialResultRow(result: result, preferredLocation: model.profile.location)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     .accessibilityHint("Opens Trial Passport")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .listRowInsets(EdgeInsets(top: Theme.Spacing.xs, leading: Theme.Metrics.screenPadding, bottom: Theme.Spacing.xs, trailing: Theme.Metrics.screenPadding))
@@ -87,16 +89,6 @@ struct MatchingView: View {
             }
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-            #if DEBUG
-            Section {
-                Text("API: \(APIConfiguration.current.baseURL?.absoluteString ?? "Not configured")")
-                Text("Source: \(response.source)")
-            } header: {
-                Text("Development provenance")
-            }
-            .font(.caption)
-            .foregroundStyle(Theme.Color.muted)
-            #endif
         }
         .scrollContentBackground(.hidden)
         .listStyle(.plain)
@@ -107,9 +99,6 @@ struct MatchingView: View {
             Text("No trials were found for this profile.")
                 .font(.body)
                 .foregroundStyle(Theme.Color.ink)
-            Text("You can edit your profile or retry.")
-                .font(.subheadline)
-                .foregroundStyle(Theme.Color.muted)
             PrimaryButton(title: "Retry", action: retry)
         }
         .padding(Theme.Metrics.screenPadding)
@@ -130,5 +119,30 @@ struct MatchingView: View {
     private func retry() {
         model.prepareRetry()
         attempt += 1
+    }
+}
+
+struct SearchHistoryView: View {
+    @Environment(SearchHistoryStore.self) private var history
+    var body: some View {
+        List {
+            if history.records.isEmpty {
+                ContentUnavailableView("No searches yet", systemImage: "clock.arrow.circlepath",)
+            }
+            ForEach(history.records) { record in
+                NavigationLink {
+                    MatchingView(model: MatchingModel(snapshot: record), onResultCount: { _ in })
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(record.profile.condition).font(.headline)
+                        Text(record.date.formatted(date: .abbreviated, time: .shortened))
+                            .font(.caption).foregroundStyle(Theme.Color.muted)
+                        Text("\(record.response.results.count) matches").font(.subheadline)
+                    }.padding(.vertical, 6)
+                }
+            }
+            if let message = history.message { Text(message).foregroundStyle(Theme.Color.attention) }
+        }
+        .navigationTitle("Search history")
     }
 }

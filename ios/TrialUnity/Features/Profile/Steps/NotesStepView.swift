@@ -10,12 +10,12 @@ struct NotesStepView: View {
             stepNumber: ProfileStep.notes.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "Any additional context?",
-            subtitle: "Add anything you’d like the study team to know.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,
             onContinue: onContinue
         ) {
+            ScanSuggestionModule(draft: draft, field: .biomarker)
             FlowLayout(spacing: Theme.Spacing.s) {
                 ForEach(["Biomarkers", "Prior treatment", "Travel limits", "Scheduling"], id: \.self) { topic in
                     SuggestionChip(title: topic) {

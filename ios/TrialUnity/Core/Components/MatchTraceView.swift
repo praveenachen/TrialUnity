@@ -53,7 +53,7 @@ private struct MatchSignalRow: View {
                 .frame(minHeight: Theme.Metrics.minTapTarget)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(signal.label): \(signal.statusText)")
             .accessibilityHint(isExpanded ? "Double tap to collapse detail" : "Double tap for detail")

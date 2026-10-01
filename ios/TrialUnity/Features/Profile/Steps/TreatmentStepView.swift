@@ -21,12 +21,12 @@ struct TreatmentStepView: View {
             stepNumber: ProfileStep.treatment.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "Which treatments interest you?",
-            subtitle: "Choose any that interest you. These preferences help rank trials.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,
             onContinue: onContinue
         ) {
+            ScanSuggestionModule(draft: draft, field: .treatment)
             VStack(alignment: .leading, spacing: Theme.Spacing.m) {
                 SelectableRow(title: "No preference", isSelected: draft.interventionPreferences.isEmpty && !choosingTreatments) {
                     draft.interventionPreferences = []
@@ -57,9 +57,6 @@ struct TreatmentStepView: View {
 
                     if !availableSuggestions.isEmpty {
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                            Text("Suggestions")
-                                .font(.sectionLabel)
-                                .foregroundStyle(Theme.Color.muted)
                             FlowLayout(spacing: Theme.Spacing.s) {
                                 ForEach(availableSuggestions, id: \.self) { suggestion in
                                     SuggestionChip(title: suggestion) {

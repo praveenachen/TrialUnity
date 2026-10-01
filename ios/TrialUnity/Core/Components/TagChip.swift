@@ -19,7 +19,7 @@ struct TagChip: View {
                     .frame(minWidth: 32, minHeight: 32)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .accessibilityLabel("Remove \(title)")
         }
         .padding(.horizontal, Theme.Spacing.m)
@@ -43,7 +43,7 @@ struct SuggestionChip: View {
                 .overlay(Capsule().stroke(Theme.Color.hairline, lineWidth: 1))
                 .foregroundStyle(Theme.Color.ink)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

@@ -39,7 +39,7 @@ struct MatchingFunnelLoadingView: View {
                     .frame(maxWidth: 320, alignment: .leading)
                 }
                 .padding(Theme.Metrics.screenPadding)
-                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                .frame(maxWidth: .infinity, minHeight: CGFloat(VisualNumber.dimension(Double(geometry.size.height))))
             }
         }
     }

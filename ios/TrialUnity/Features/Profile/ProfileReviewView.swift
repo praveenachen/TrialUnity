@@ -12,9 +12,6 @@ struct ProfileReviewView: View {
                     Text("Review your profile")
                         .font(.editorialTitle)
                         .foregroundStyle(Theme.Color.ink)
-                    Text("Double-check these details before we look for matching trials.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.Color.muted)
                 }
 
                 VStack(spacing: Theme.Spacing.s) {

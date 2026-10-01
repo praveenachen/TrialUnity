@@ -16,7 +16,7 @@ struct SelectionCheckRow: View {
             .foregroundStyle(isSelected ? Theme.Color.accent : Theme.Color.muted)
             .frame(minHeight: Theme.Metrics.minTapTarget, alignment: .leading)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }

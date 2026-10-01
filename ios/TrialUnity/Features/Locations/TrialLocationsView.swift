@@ -183,7 +183,6 @@ struct TrialLocationsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Study locations").font(.title3.bold())
                     Text("\(trial.mapSites.count) listed sites").font(.subheadline).foregroundStyle(Theme.Color.muted)
-                    Text("Confirm the site address before travel.").font(.caption).foregroundStyle(Theme.Color.muted)
                     DisclosureGroup("About pins and distances") {
                         Text("City pins mark an approximate area. Distances appear only for precise locations and are straight-line estimates, not driving distances.")
                             .font(.caption).foregroundStyle(Theme.Color.muted).padding(.top, 4)

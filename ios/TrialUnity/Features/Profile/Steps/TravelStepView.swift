@@ -10,7 +10,6 @@ struct TravelStepView: View {
             stepNumber: ProfileStep.travel.stepNumber,
             totalSteps: ProfileStep.totalSteps,
             title: "How far are you willing to travel?",
-            subtitle: "Keep your travel preference alongside your profile. It does not filter results yet.",
             isOptional: true,
             continueTitle: isEditing ? "Save" : "Continue",
             onSkip: isEditing ? nil : onContinue,

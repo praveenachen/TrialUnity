@@ -11,6 +11,30 @@ final class PatientProfileDraft {
     var travelPreference: TravelPreference?
     var interventionPreferences: [String] = []
     var notes: String = ""
+    // Shares the existing in-memory draft lifetime across profile navigation.
+    var scanSuggestions: [ScanCandidate] = []
+    var acceptedScanSuggestionIDs: Set<String> = []
+
+    func keepScanSuggestions(_ candidates: [ScanCandidate]) {
+        let accepted = scanSuggestions.filter { acceptedScanSuggestionIDs.contains($0.id) }
+        scanSuggestions = accepted + candidates.filter { !acceptedScanSuggestionIDs.contains($0.id) }
+    }
+
+    @discardableResult func useScanSuggestion(_ id: String, replaceExisting: Bool = false) -> Bool {
+        guard let item = scanSuggestions.first(where: { $0.id == id }),
+              !acceptedScanSuggestionIDs.contains(id) else { return false }
+        if !replaceExisting && !DocumentProfileAssist.conflicts([item], draft: self).isEmpty { return false }
+        switch item.field {
+        case .condition: condition = item.value
+        case .age: ageText = item.value
+        case .treatment: addInterventionPreference(item.value)
+        case .biomarker:
+            let value = "Biomarkers: \(item.value)"
+            if !notes.contains(value) { notes += (notes.isEmpty ? "" : "\n") + value }
+        }
+        acceptedScanSuggestionIDs.insert(id)
+        return true
+    }
 
     init() {}
 

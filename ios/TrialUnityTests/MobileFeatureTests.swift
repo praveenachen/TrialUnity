@@ -278,4 +278,22 @@ final class MobileFeatureTests: XCTestCase {
         XCTAssertNotNil(store.message)
     }
 
+    func testDeleteAppointmentsPersistsIncludingLastRecord() throws {
+        let path = file(); defer { try? FileManager.default.removeItem(at: path.deletingLastPathComponent()) }
+        let store = AppointmentStore(file: path)
+        store.start([try trial()], context: "First")
+        let first = try XCTUnwrap(store.records.first?.id)
+        store.start([try trial("NCT2")], context: "Second")
+        let second = try XCTUnwrap(store.records.last?.id)
+        store.delete(second)
+        XCTAssertEqual(store.session?.context, "First")
+        XCTAssertEqual(AppointmentStore(file: path).records.map(\.id), [first])
+        store.delete(first)
+        let empty = AppointmentStore(file: path)
+        XCTAssertTrue(empty.records.isEmpty)
+        XCTAssertNil(empty.session)
+        XCTAssertNil(empty.message)
+        XCTAssertTrue(empty.start([try trial()], context: "New"))
+    }
+
 }

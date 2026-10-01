@@ -94,7 +94,7 @@ struct AppointmentRecord: Codable, Identifiable {
 }
 
 private struct AppointmentArchive: Codable {
-    var currentID: UUID
+    var currentID: UUID?
     var records: [AppointmentRecord]
 }
 
@@ -116,10 +116,9 @@ private struct AppointmentArchive: Codable {
         do {
             let data = try Data(contentsOf: file)
             if let archive = try? JSONDecoder().decode(AppointmentArchive.self, from: data) {
-                guard !archive.records.isEmpty,
-                      Set(archive.records.map(\.id)).count == archive.records.count,
+                guard Set(archive.records.map(\.id)).count == archive.records.count,
                       archive.records.allSatisfy({ $0.session.isValid }),
-                      archive.records.contains(where: { $0.id == archive.currentID }) else { throw CocoaError(.fileReadCorruptFile) }
+                      (archive.records.isEmpty ? archive.currentID == nil : archive.records.contains(where: { $0.id == archive.currentID })) else { throw CocoaError(.fileReadCorruptFile) }
                 records = archive.records
                 currentID = archive.currentID
             } else {
@@ -138,6 +137,11 @@ private struct AppointmentArchive: Codable {
         }
         let record = AppointmentRecord(id: UUID(), createdAt: Date(), updatedAt: Date(), completedAt: nil, session: value)
         return persist(records + [record], currentID: record.id)
+    }
+    func delete(_ id: UUID) {
+        guard records.contains(where: { $0.id == id }) else { return }
+        let remaining = records.filter { $0.id != id }
+        _ = persist(remaining, currentID: currentID == id ? remaining.last?.id : currentID)
     }
     func toggle(_ item: AppointmentItem, trialID: String, recordID: UUID? = nil) {
         update(recordID) { value in
@@ -175,7 +179,7 @@ private struct AppointmentArchive: Codable {
         if !values[index].session.completed { values[index].completedAt = nil }
         _ = persist(values, currentID: currentID)
     }
-    @discardableResult private func persist(_ values: [AppointmentRecord], currentID: UUID) -> Bool {
+    @discardableResult private func persist(_ values: [AppointmentRecord], currentID: UUID?) -> Bool {
         do {
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(AppointmentArchive(currentID: currentID, records: values)).write(to: file, options: .atomic)
