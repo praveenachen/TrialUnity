@@ -17,6 +17,9 @@ import Observation
     private let cache = GeocodeCache()
     private var loaded = false
     var nearest: ResolvedTrialSite? { SiteDistance.nearest(sites, origin: origin) }
+    var originIsProfile: Bool { originLabel.hasPrefix("Profile") }
+    /// True once the patient picked "Current location" (until it is denied or switched back).
+    var usesCurrentLocation: Bool { requestedLocation }
 
     private let lookup: ((String) async -> SiteCoordinate?)?
     private let requestAuthorization: (CLLocationManager) -> Void
@@ -45,6 +48,7 @@ import Observation
             var coordinate = site.coordinate
             if coordinate == nil { coordinate = await resolve(site.address) }
             if coordinate == nil, site.address != site.location { coordinate = await resolve(site.location) }
+            if coordinate == nil, let facility = site.facility, !facility.isEmpty { coordinate = await resolvePlace(facility: facility, location: site.location) }
             resolved.append(ResolvedTrialSite(id: index, site: site, coordinate: coordinate))
             sites = resolved
         }
@@ -60,6 +64,22 @@ import Observation
                 guard places.count == 1, let place = places.first, let location = place.location else { return nil }
                 return SiteCoordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude,
                                       precise: place.thoroughfare != nil && place.subThoroughfare != nil)
+            } catch { return nil }
+        }
+    }
+    /// Named-place lookup for sites whose address text didn't geocode. A result is accepted only
+    /// when its city appears in the registry's location text, so a look-alike elsewhere is never used.
+    private func resolvePlace(facility: String, location: String) async -> SiteCoordinate? {
+        guard lookup == nil else { return nil }
+        return await cache.resolve("place: \(facility), \(location)") { _ in
+            let request = MKLocalSearch.Request()
+            request.naturalLanguageQuery = "\(facility), \(location)"
+            request.resultTypes = .pointOfInterest
+            do {
+                let response = try await MKLocalSearch(request: request).start()
+                guard let item = response.mapItems.first, let city = item.placemark.locality?.lowercased(),
+                      location.lowercased().contains(city), let point = item.placemark.location else { return nil }
+                return SiteCoordinate(latitude: point.coordinate.latitude, longitude: point.coordinate.longitude, precise: true)
             } catch { return nil }
         }
     }
@@ -111,17 +131,12 @@ import Observation
         originLabel = "Profile location"
         message = "Location access is unavailable. Your profile location and trial locations still work."
     }
+    /// Opens Apple Maps with the site preloaded as the destination; Apple Maps supplies the route origin.
     func directions(to resolved: ResolvedTrialSite) {
         guard let point = resolved.coordinate else { return }
         let destination = MKMapItem(placemark: MKPlacemark(coordinate: point.clCoordinate))
-        destination.name = resolved.site.address
-        if let origin {
-            let start = MKMapItem(placemark: MKPlacemark(coordinate: origin.clCoordinate))
-            start.name = originLabel
-            if !MKMapItem.openMaps(with: [start, destination], launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving]) {
-                message = "Apple Maps couldn't be opened. Please try again."
-            }
-        } else if !destination.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving]) {
+        destination.name = resolved.site.facility ?? resolved.site.location
+        if !destination.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving]) {
             message = "Apple Maps couldn't be opened. Please try again."
         }
     }
@@ -138,40 +153,73 @@ struct TrialLocationsView: View {
     @State private var model = TrialLocationModel()
     @State private var selected: Int?
     @State private var camera: MapCameraPosition = .automatic
+    @State private var showsAll = false
+    @State private var framed = false
     @State private var visibleSiteCount = 20
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    private var listedSites: [ResolvedTrialSite] { model.sites.filter { $0.id != selected } }
+    private var hasCoordinates: Bool { model.sites.contains { $0.coordinate != nil } }
+    private var selectedSite: ResolvedTrialSite? { model.sites.first { $0.id == selected } }
+    /// Offer the toggle only when "all" would show something the nearby view doesn't.
+    private var canToggleScope: Bool {
+        SiteViewport.nearby(model.sites, origin: model.origin).count < model.sites.filter { $0.coordinate != nil }.count
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
-                if model.sites.contains(where: { $0.coordinate != nil }) {
+                if hasCoordinates {
                     Map(position: $camera, selection: $selected) {
+                        UserAnnotation()
+                        if let origin = model.origin, model.originIsProfile {
+                            Marker("Your location", systemImage: "person.fill", coordinate: origin.clCoordinate)
+                                .tint(Theme.Color.accent)
+                        }
                         ForEach(model.sites) { site in
                             if let point = site.coordinate {
-                                Marker(site.site.facility ?? site.site.location, coordinate: point.clCoordinate).tag(site.id)
+                                Marker(site.site.facility ?? site.site.location, coordinate: point.clCoordinate)
+                                    .tint(selected == site.id ? Theme.Color.accent : .red)
+                                    .tag(site.id)
                             }
                         }
                     }
-                    .frame(height: 280)
+                    .mapControls { MapUserLocationButton(); MapCompass(); MapScaleView() }
+                    .frame(height: 320)
                     .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
                     .accessibilityLabel("Trial locations map. Location details are also listed below.")
+                    if canToggleScope || showsAll {
+                        Button { setScope(all: !showsAll) } label: {
+                            actionLabel(showsAll ? "Nearby" : "View all locations", symbol: showsAll ? "location.circle" : "globe")
+                        }.buttonStyle(LocationActionStyle())
+                    }
                 }
                 if model.loading { loadingIndicator("Finding trial locations…") }
 
                 CardContainer {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Your starting location").font(.headline)
-                        Text(model.originLabel).font(.subheadline).foregroundStyle(Theme.Color.muted)
-                        let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 10))
-                        layout {
-                            Button { model.useCurrentLocation() } label: {
-                                actionLabel("Current location", symbol: "location.fill")
-                            }.disabled(model.locating)
-                            Button { model.useProfileLocation(profileLocation) } label: {
-                                actionLabel("Profile location", symbol: "person.crop.circle")
+                        HStack {
+                            Text("Your starting location").font(.headline)
+                            Spacer(minLength: 8)
+                            Menu {
+                                Picker("Starting location", selection: Binding(
+                                    get: { model.usesCurrentLocation },
+                                    set: { current in
+                                        if current { model.useCurrentLocation() } else { model.useProfileLocation(profileLocation) }
+                                    }
+                                )) {
+                                    Text("Current location").tag(true)
+                                    Text("Profile location").tag(false)
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text(model.usesCurrentLocation ? "Current location" : "Profile location")
+                                    Image(systemName: "chevron.up.chevron.down").font(.caption2)
+                                }
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.Color.accent)
+                                .frame(minHeight: 44)
                             }
-                        }.buttonStyle(LocationActionStyle())
+                        }
+                        Text(model.originLabel).font(.subheadline).foregroundStyle(Theme.Color.muted)
                         if model.locating { loadingIndicator("Finding current location…") }
                         if let message = model.message {
                             Text(message).font(.footnote).foregroundStyle(Theme.Color.muted)
@@ -196,15 +244,10 @@ struct TrialLocationsView: View {
                     Label("Nearest listed site: \(nearest.site.address)", systemImage: "location.circle")
                         .font(.subheadline.weight(.semibold))
                 }
-                if let selected, let site = model.sites.first(where: { $0.id == selected }) {
-                    Text("Selected site").font(.headline)
-                    siteCard(site)
-                    Divider()
-                }
                 LazyVStack(spacing: 16) {
-                    ForEach(listedSites.prefix(visibleSiteCount)) { siteCard($0) }
+                    ForEach(model.sites.prefix(visibleSiteCount)) { siteCard($0) }
                 }
-                if listedSites.count > visibleSiteCount {
+                if model.sites.count > visibleSiteCount {
                     Button { visibleSiteCount += 20 } label: {
                         actionLabel("Load more locations", symbol: "chevron.down")
                     }.buttonStyle(LocationActionStyle())
@@ -220,6 +263,73 @@ struct TrialLocationsView: View {
         .background(Theme.Color.paper)
         .navigationTitle("Trial locations").navigationBarTitleDisplayMode(.inline)
         .task { await model.load(trial: trial, profileLocation: profileLocation) }
+        .onChange(of: hasCoordinates) { _, has in if has { frameInitial() } }
+        .onChange(of: model.loading) { _, loading in if !loading { frameInitial() } }
+        .onChange(of: selected) { _, id in focus(on: id) }
+        .sheet(isPresented: Binding(get: { selectedSite != nil }, set: { if !$0 { selected = nil } })) {
+            if let site = selectedSite { siteSheet(site) }
+        }
+    }
+
+    // MARK: Camera
+
+    private func region(_ frame: MapFrame) -> MKCoordinateRegion {
+        MKCoordinateRegion(center: .init(latitude: frame.latitude, longitude: frame.longitude),
+                           span: .init(latitudeDelta: frame.latitudeSpan, longitudeDelta: frame.longitudeSpan))
+    }
+
+    /// Opens around the patient / nearby sites -- never the whole world by default.
+    private func frameInitial() {
+        guard !framed || model.loading == false else { return }
+        guard let frame = showsAll ? SiteViewport.allFrame(model.sites) : SiteViewport.nearbyFrame(model.sites, origin: model.origin) else { return }
+        framed = true
+        camera = .region(region(frame))
+    }
+
+    private func setScope(all: Bool) {
+        showsAll = all
+        selected = nil
+        guard let frame = all ? SiteViewport.allFrame(model.sites) : SiteViewport.nearbyFrame(model.sites, origin: model.origin) else { return }
+        withAnimation(.easeInOut(duration: 0.6)) { camera = .region(region(frame)) }
+    }
+
+    private func focus(on id: Int?) {
+        guard let id, let point = model.sites.first(where: { $0.id == id })?.coordinate else { return }
+        withAnimation(.easeInOut(duration: 0.5)) {
+            camera = .camera(MapCamera(centerCoordinate: point.clCoordinate, distance: 20_000))
+        }
+    }
+
+    // MARK: Site sheet
+
+    private func siteSheet(_ site: ResolvedTrialSite) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(site.site.facility ?? site.site.location).font(.title3.bold())
+            if site.site.facility != nil { Text(site.site.location).font(.subheadline).foregroundStyle(Theme.Color.muted) }
+            if let status = site.site.status { TrialStatusText(status: status) }
+            if let point = site.coordinate {
+                if !point.precise { Text("Approximate area · facility address unverified").font(.caption).foregroundStyle(Theme.Color.attention) }
+                if let origin = model.origin, origin.precise, point.precise {
+                    Text("About \(origin.meters(to: point) / 1000, specifier: "%.1f") km straight-line").font(.caption).foregroundStyle(Theme.Color.muted)
+                }
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: 10) {
+                Button { model.directions(to: site) } label: {
+                    actionLabel("Directions", symbol: "arrow.triangle.turn.up.right.diamond")
+                }.buttonStyle(LocationActionStyle())
+                Button { selected = nil } label: {
+                    Text("Close").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 44)
+                        .foregroundStyle(Theme.Color.accent)
+                        .background(Theme.Color.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.control))
+                }.buttonStyle(.plain)
+            }
+        }
+        .padding(Theme.Metrics.screenPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .presentationDetents([.height(250)])
+        .presentationBackgroundInteraction(.enabled)
+        .presentationDragIndicator(.visible)
     }
 
     private func loadingIndicator(_ title: String) -> some View {

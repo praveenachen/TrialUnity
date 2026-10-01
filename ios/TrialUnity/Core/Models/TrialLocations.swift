@@ -49,6 +49,62 @@ enum SiteDistance {
     }
 }
 
+/// A padded bounding box for the map camera.
+struct MapFrame: Equatable {
+    let latitude: Double
+    let longitude: Double
+    let latitudeSpan: Double
+    let longitudeSpan: Double
+}
+
+/// Camera planning for the trial map. Framing only: nothing here is shown to the
+/// patient as a distance or as a "nearest" claim.
+enum SiteViewport {
+    /// Sites within this distance of the anchor count as "nearby".
+    static let nearbyRadius: Double = 150_000
+    private static let minSpan = 0.08
+
+    /// Sites to frame in the nearby view. The anchor is the patient's location when known,
+    /// otherwise the first reliably resolved site (so a global trial still opens locally).
+    /// With a patient location and nothing within range, the result is empty -- the camera
+    /// stays on the patient rather than jumping to a distant site.
+    static func nearby(_ sites: [ResolvedTrialSite], origin: SiteCoordinate?) -> [ResolvedTrialSite] {
+        let resolved = sites.filter { $0.coordinate?.isValid == true }
+        guard !resolved.isEmpty else { return [] }
+        let anchor: SiteCoordinate
+        if let origin, origin.isValid { anchor = origin }
+        else { anchor = (resolved.first { $0.coordinate?.precise == true } ?? resolved[0]).coordinate! }
+        return resolved.filter { anchor.meters(to: $0.coordinate!) <= nearbyRadius }
+    }
+
+    /// A padded frame around the points, or nil when there are none. Spans are kept
+    /// within MapKit's valid range, so a worldwide trial still produces a usable region.
+    static func frame(_ points: [SiteCoordinate], padding: Double = 1.5) -> MapFrame? {
+        let valid = points.filter(\.isValid)
+        guard let first = valid.first else { return nil }
+        var minLat = first.latitude, maxLat = first.latitude, minLon = first.longitude, maxLon = first.longitude
+        for point in valid {
+            minLat = min(minLat, point.latitude); maxLat = max(maxLat, point.latitude)
+            minLon = min(minLon, point.longitude); maxLon = max(maxLon, point.longitude)
+        }
+        return MapFrame(latitude: (minLat + maxLat) / 2, longitude: (minLon + maxLon) / 2,
+                        latitudeSpan: min(170, max(minSpan, (maxLat - minLat) * padding)),
+                        longitudeSpan: min(340, max(minSpan, (maxLon - minLon) * padding)))
+    }
+
+    /// Frame for the nearby view: nearby sites plus the patient location when known.
+    static func nearbyFrame(_ sites: [ResolvedTrialSite], origin: SiteCoordinate?) -> MapFrame? {
+        var points = nearby(sites, origin: origin).compactMap(\.coordinate)
+        if let origin, origin.isValid { points.append(origin) }
+        return frame(points)
+    }
+
+    /// Frame for "View all locations": every resolved site.
+    static func allFrame(_ sites: [ResolvedTrialSite]) -> MapFrame? {
+        frame(sites.compactMap(\.coordinate))
+    }
+}
+
 /// Only successful, valid responses are cached; misses can be retried on a later visit.
 @MainActor final class GeocodeCache {
     private var values: [String: SiteCoordinate]
