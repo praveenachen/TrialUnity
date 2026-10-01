@@ -16,6 +16,8 @@ import Observation
     private let geocoder = CLGeocoder()
     private let cache = GeocodeCache()
     private var loaded = false
+    var totalSites: Int { sites.count }
+    var resolvedCount: Int { sites.filter { $0.coordinate != nil }.count }
     var nearest: ResolvedTrialSite? { SiteDistance.nearest(sites, origin: origin) }
     var originIsProfile: Bool { originLabel.hasPrefix("Profile") }
     /// True once the patient picked "Current location" (until it is denied or switched back).
@@ -42,15 +44,21 @@ import Observation
             profileOrigin = await resolve(profileLocation)
             if !requestedLocation { origin = profileOrigin; originLabel = "Profile: \(profileLocation)" }
         }
-        var resolved: [ResolvedTrialSite] = []
-        for (index, site) in trial.mapSites.enumerated() {
+        // Show every site at once: registry coordinates are placed immediately, the rest wait their turn.
+        let mapSites = trial.mapSites
+        sites = mapSites.enumerated().map {
+            ResolvedTrialSite(id: $0.offset, site: $0.element, coordinate: $0.element.coordinate, pending: $0.element.coordinate == nil)
+        }
+        let pending = sites.filter(\.pending).map(\.id)
+        for index in SiteOrdering.lookupOrder(mapSites, pending: pending, profileLocation: profileLocation) {
             if Task.isCancelled { return }
-            var coordinate = site.coordinate
+            let site = mapSites[index]
+            var coordinate: SiteCoordinate?
+            // A named-place search is fast and precise; the paced address geocoder is the fallback.
+            if let facility = site.facility, !facility.isEmpty { coordinate = await resolvePlace(facility: facility, location: site.location) }
             if coordinate == nil { coordinate = await resolve(site.address) }
             if coordinate == nil, site.address != site.location { coordinate = await resolve(site.location) }
-            if coordinate == nil, let facility = site.facility, !facility.isEmpty { coordinate = await resolvePlace(facility: facility, location: site.location) }
-            resolved.append(ResolvedTrialSite(id: index, site: site, coordinate: coordinate))
-            sites = resolved
+            sites[index] = ResolvedTrialSite(id: index, site: site, coordinate: coordinate, pending: false)
         }
         loaded = true
     }
@@ -154,10 +162,11 @@ struct TrialLocationsView: View {
     @State private var selected: Int?
     @State private var camera: MapCameraPosition = .automatic
     @State private var showsAll = false
-    @State private var framed = false
+    @State private var lastNearbyIDs: Set<Int> = []
     @State private var visibleSiteCount = 20
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    private var hasCoordinates: Bool { model.sites.contains { $0.coordinate != nil } }
+    private var hasCoordinates: Bool { model.resolvedCount > 0 }
+    private var groups: (nearby: [ResolvedTrialSite], others: [ResolvedTrialSite]) { SiteOrdering.groups(model.sites, origin: model.origin) }
     private var selectedSite: ResolvedTrialSite? { model.sites.first { $0.id == selected } }
     /// Offer the toggle only when "all" would show something the nearby view doesn't.
     private var canToggleScope: Bool {
@@ -192,7 +201,9 @@ struct TrialLocationsView: View {
                         }.buttonStyle(LocationActionStyle())
                     }
                 }
-                if model.loading { loadingIndicator("Finding trial locations…") }
+                if model.loading && model.totalSites > 0 {
+                    loadingIndicator("Found \(model.resolvedCount) of \(model.totalSites) locations…")
+                }
 
                 CardContainer {
                     VStack(alignment: .leading, spacing: 12) {
@@ -244,10 +255,16 @@ struct TrialLocationsView: View {
                     Label("Nearest listed site: \(nearest.site.address)", systemImage: "location.circle")
                         .font(.subheadline.weight(.semibold))
                 }
-                LazyVStack(spacing: 16) {
-                    ForEach(model.sites.prefix(visibleSiteCount)) { siteCard($0) }
+                let grouped = groups
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    if !grouped.nearby.isEmpty {
+                        Text("Near you").font(.headline)
+                        ForEach(grouped.nearby) { siteCard($0) }
+                        if !grouped.others.isEmpty { Text("Other locations").font(.headline).padding(.top, 8) }
+                    }
+                    ForEach(grouped.others.prefix(visibleSiteCount)) { siteCard($0) }
                 }
-                if model.sites.count > visibleSiteCount {
+                if grouped.others.count > visibleSiteCount {
                     Button { visibleSiteCount += 20 } label: {
                         actionLabel("Load more locations", symbol: "chevron.down")
                     }.buttonStyle(LocationActionStyle())
@@ -263,8 +280,13 @@ struct TrialLocationsView: View {
         .background(Theme.Color.paper)
         .navigationTitle("Trial locations").navigationBarTitleDisplayMode(.inline)
         .task { await model.load(trial: trial, profileLocation: profileLocation) }
-        .onChange(of: hasCoordinates) { _, has in if has { frameInitial() } }
-        .onChange(of: model.loading) { _, loading in if !loading { frameInitial() } }
+        .onChange(of: hasCoordinates) { _, has in if has { reframe(animated: false) } }
+        .onChange(of: model.origin) { _, _ in reframe() }
+        .onChange(of: model.resolvedCount) { _, _ in
+            if showsAll { if selected == nil { setScope(all: true) } }
+            else if Set(SiteViewport.nearby(model.sites, origin: model.origin).map(\.id)) != lastNearbyIDs { reframe() }
+        }
+        .onChange(of: model.loading) { _, loading in if !loading { reframe() } }
         .onChange(of: selected) { _, id in focus(on: id) }
         .sheet(isPresented: Binding(get: { selectedSite != nil }, set: { if !$0 { selected = nil } })) {
             if let site = selectedSite { siteSheet(site) }
@@ -278,12 +300,14 @@ struct TrialLocationsView: View {
                            span: .init(latitudeDelta: frame.latitudeSpan, longitudeDelta: frame.longitudeSpan))
     }
 
-    /// Opens around the patient / nearby sites -- never the whole world by default.
-    private func frameInitial() {
-        guard !framed || model.loading == false else { return }
-        guard let frame = showsAll ? SiteViewport.allFrame(model.sites) : SiteViewport.nearbyFrame(model.sites, origin: model.origin) else { return }
-        framed = true
-        camera = .region(region(frame))
+    /// Frames the patient's location and nearby sites -- never the whole world by default.
+    /// Re-run when the starting location changes or new nearby sites are found.
+    private func reframe(animated: Bool = true) {
+        guard !showsAll, selected == nil,
+              let frame = SiteViewport.nearbyFrame(model.sites, origin: model.origin) else { return }
+        lastNearbyIDs = Set(SiteViewport.nearby(model.sites, origin: model.origin).map(\.id))
+        if animated { withAnimation(.easeInOut(duration: 0.6)) { camera = .region(region(frame)) } }
+        else { camera = .region(region(frame)) }
     }
 
     private func setScope(all: Bool) {
@@ -360,6 +384,8 @@ struct TrialLocationsView: View {
                     Button { model.directions(to: site) } label: {
                         actionLabel("Directions", symbol: "arrow.triangle.turn.up.right.diamond")
                     }.buttonStyle(LocationActionStyle())
+                } else if site.pending {
+                    Text("Finding location…").font(.caption).foregroundStyle(Theme.Color.muted)
                 } else {
                     Text("Location couldn't be resolved. Check the registry address.").font(.caption).foregroundStyle(Theme.Color.muted)
                 }

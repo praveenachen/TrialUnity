@@ -45,4 +45,25 @@ final class SiteViewportTests: XCTestCase {
         let dup = try! XCTUnwrap(SiteViewport.allFrame([site(0, 43.66, -79.39), site(1, 43.66, -79.39)]))
         XCTAssertEqual(dup, one)
     }
+
+    func testListGroupsNearbyFirstThenByDistanceThenUnplaced() {
+        let sites = [site(0, 35.68, 139.69), site(1, 43.70, -79.40), site(2, nil, nil), site(3, 43.66, -79.39), site(4, 40.71, -74.00)]
+        let groups = SiteOrdering.groups(sites, origin: toronto)
+        XCTAssertEqual(groups.nearby.map(\.id), [3, 1])                // closest first
+        XCTAssertEqual(groups.others.map(\.id), [4, 0, 2])             // then by distance, unplaced last
+    }
+
+    func testListKeepsRegistryOrderWithoutAStartingPoint() {
+        let sites = [site(0, 35.68, 139.69), site(1, 43.70, -79.40), site(2, nil, nil)]
+        let groups = SiteOrdering.groups(sites, origin: nil)
+        XCTAssertTrue(groups.nearby.isEmpty)
+        XCTAssertEqual(groups.others.map(\.id), [0, 1, 2])
+    }
+
+    func testLookupOrderPrioritizesSitesMatchingTheProfileLocation() {
+        func plain(_ location: String) -> TrialSite { TrialSite(facility: nil, location: location, status: nil, latitude: nil, longitude: nil) }
+        let sites = [plain("Tokyo, Japan"), plain("Toronto, Ontario, Canada"), plain("Paris, France"), plain("Ottawa, Ontario, Canada")]
+        XCTAssertEqual(SiteOrdering.lookupOrder(sites, pending: [0, 1, 2, 3], profileLocation: "Toronto, Ontario"), [1, 3, 0, 2])
+        XCTAssertEqual(SiteOrdering.lookupOrder(sites, pending: [0, 1, 2, 3], profileLocation: nil), [0, 1, 2, 3])
+    }
 }

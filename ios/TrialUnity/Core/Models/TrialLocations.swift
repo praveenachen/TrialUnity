@@ -32,6 +32,8 @@ struct ResolvedTrialSite: Identifiable {
     let id: Int
     let site: TrialSite
     let coordinate: SiteCoordinate?
+    /// True while the site is still waiting for its location to be looked up.
+    var pending = false
 }
 
 extension Trial {
@@ -102,6 +104,34 @@ enum SiteViewport {
     /// Frame for "View all locations": every resolved site.
     static func allFrame(_ sites: [ResolvedTrialSite]) -> MapFrame? {
         frame(sites.compactMap(\.coordinate))
+    }
+}
+
+/// Orders the site list for display. With a known starting point, nearby sites come first
+/// (closest first), then the rest by distance, then sites that could not be placed.
+/// Without one, registry order is kept -- no ordering claim is made.
+enum SiteOrdering {
+    static func groups(_ sites: [ResolvedTrialSite], origin: SiteCoordinate?) -> (nearby: [ResolvedTrialSite], others: [ResolvedTrialSite]) {
+        guard let origin, origin.isValid else { return ([], sites) }
+        func distance(_ site: ResolvedTrialSite) -> Double { origin.meters(to: site.coordinate!) }
+        let located = sites.filter { $0.coordinate?.isValid == true }
+        let nearby = located.filter { distance($0) <= SiteViewport.nearbyRadius }.sorted { distance($0) < distance($1) }
+        let nearbyIDs = Set(nearby.map(\.id))
+        let farther = located.filter { !nearbyIDs.contains($0.id) }.sorted { distance($0) < distance($1) }
+        let unplaced = sites.filter { $0.coordinate?.isValid != true }
+        return (nearby, farther + unplaced)
+    }
+
+    /// Lookup order: sites whose text mentions the patient's city/region first, so the
+    /// relevant ones appear on the map before distant ones.
+    static func lookupOrder(_ sites: [TrialSite], pending: [Int], profileLocation: String?) -> [Int] {
+        let tokens = (profileLocation ?? "").split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }.filter { !$0.isEmpty }
+        func relevant(_ index: Int) -> Bool {
+            let text = sites[index].location.lowercased()
+            return tokens.contains { text.contains($0) }
+        }
+        return pending.filter(relevant) + pending.filter { !relevant($0) }
     }
 }
 
