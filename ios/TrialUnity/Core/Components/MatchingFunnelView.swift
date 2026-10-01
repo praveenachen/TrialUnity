@@ -16,7 +16,7 @@ struct MatchingFunnelLoadingView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            ScrollView {
+            VerticalScrollView {
                 VStack(spacing: Theme.Spacing.xxl) {
                     VStack(spacing: Theme.Spacing.l) {
                         wheel

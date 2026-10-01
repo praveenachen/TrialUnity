@@ -165,7 +165,7 @@ struct TrialLocationsView: View {
     }
 
     var body: some View {
-        ScrollView {
+        VerticalScrollView {
             VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
                 if hasCoordinates {
                     Map(position: $camera, selection: $selected) {

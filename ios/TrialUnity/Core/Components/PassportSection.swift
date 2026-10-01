@@ -29,7 +29,7 @@ struct PassportSection<Content: View>: View {
 }
 
 #Preview {
-    ScrollView {
+    VerticalScrollView {
         PassportSection(title: "Your match") {
             Text("Match content goes here.")
         }

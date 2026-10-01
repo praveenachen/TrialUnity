@@ -135,7 +135,7 @@ struct SignInView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            ScrollView {
+            VerticalScrollView {
                 VStack(spacing: Theme.Metrics.sectionSpacing) {
                     VStack(spacing: Theme.Spacing.s) {
                         BrandMark(size: 64, color: .white)
@@ -252,7 +252,7 @@ struct HomeView: View {
     let openMenu: () -> Void
 
     var body: some View {
-        ScrollView {
+        VerticalScrollView {
             VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
                 Button(action: explore) {
                     HStack(spacing: 12) {

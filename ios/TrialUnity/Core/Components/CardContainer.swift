@@ -72,3 +72,17 @@ struct PressableButtonStyle: ButtonStyle {
 extension ButtonStyle where Self == PressableButtonStyle {
     static var pressable: PressableButtonStyle { PressableButtonStyle() }
 }
+
+/// A vertical-only scroll view that cannot drift sideways: the content is pinned to the
+/// screen width (so an over-wide child can't create horizontal scroll range) and
+/// horizontal bounce is off unless the content is genuinely wider.
+struct VerticalScrollView<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollView(.vertical) {
+            content.containerRelativeFrame(.horizontal)
+        }
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+    }
+}

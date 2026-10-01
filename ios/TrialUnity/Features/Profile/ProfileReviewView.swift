@@ -6,7 +6,7 @@ struct ProfileReviewView: View {
     let onContinue: () -> Void
 
     var body: some View {
-        ScrollView {
+        VerticalScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.s) {
                     Text("Review your profile")

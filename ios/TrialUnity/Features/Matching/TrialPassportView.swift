@@ -9,7 +9,7 @@ struct TrialPassportView: View {
     private var eligibility: EligibilitySummary { EligibilitySummary(status: result.structured_eligibility?.status) }
 
     var body: some View {
-        ScrollView {
+        VerticalScrollView {
             VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
                 BrandedSurface {
                     VStack(alignment: .leading, spacing: 10) {

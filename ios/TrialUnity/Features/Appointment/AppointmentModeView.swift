@@ -141,7 +141,7 @@ struct AppointmentModeView: View {
     @FocusState private var editingNotes: Bool
 
     var body: some View {
-        ScrollView {
+        VerticalScrollView {
             VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
                 if let session = store.record(selectedRecordID)?.session {
                     if session.completed { completion(session) }
@@ -262,7 +262,7 @@ struct AppointmentDetailsView: View {
     @State private var editing = false
 
     var body: some View {
-        ScrollView {
+        VerticalScrollView {
             if let record = store.record(recordID) {
                 VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
                     Text(record.session.completed ? "Completed appointment" : "Appointment in progress")

@@ -153,7 +153,7 @@ struct TrialComparisonView: View {
             )
             .background(Theme.Color.paper)
         } else {
-            ScrollView {
+            VerticalScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
                     BrandedSurface {
                         VStack(alignment: .leading, spacing: Theme.Spacing.m) {
@@ -224,7 +224,7 @@ struct AppointmentBriefView: View {
     private var shareText: String { AppointmentBrief.generate(trials, context: context) }
 
     var body: some View {
-        ScrollView {
+        VerticalScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text("Appointment brief")

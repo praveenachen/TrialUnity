@@ -18,7 +18,7 @@ struct DocumentScannerView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            VerticalScrollView {
                 VStack(alignment: .leading, spacing: Theme.Metrics.sectionSpacing) {
                     Text(hasScanned && !candidates.isEmpty ? "We found a few details" : "Scan a medical document")
                         .font(.title2.bold())
