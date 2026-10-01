@@ -67,14 +67,6 @@ struct MatchingView: View {
     private func resultsList(_ response: TrialSearchResponse) -> some View {
         List {
             Section {
-                BrandHeader(subtitle: "\(response.results.count) matches for \(model.profile.condition)")
-                    .padding(.vertical, Theme.Spacing.xs)
-            }
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: Theme.Spacing.s, leading: Theme.Metrics.screenPadding, bottom: Theme.Spacing.s, trailing: Theme.Metrics.screenPadding))
-
-            Section {
                 ForEach(response.results) { result in
                     Button {
                         openedSource = response.source
